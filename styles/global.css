@@ -1,0 +1,711 @@
+:root {
+        color-scheme: var(--color-scheme, dark);
+        --font-system: "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
+          sans-serif;
+        --font-serif: "New York", "Georgia", "Times New Roman", serif;
+        --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+        --app-font: var(--font-system);
+        --editor-font: var(--font-mono);
+        --body-background: radial-gradient(circle at top, #050505 0, #070b18 40%, #020306 100%);
+        --bg: #030509;
+        --bg-panel: rgba(6, 12, 27, 0.95);
+        --bg-pane: rgba(4, 8, 20, 0.9);
+        --sidebar-bg: rgba(5, 10, 24, 0.8);
+        --panel-bg: rgba(8, 16, 38, 0.85);
+        --notes-bg: rgba(8, 16, 40, 0.65);
+        --notes-active: rgba(57, 255, 119, 0.18);
+        --editor-bg: rgba(2, 5, 14, 0.8);
+        --text: #d8e4ff;
+        --text-strong: #f9fbff;
+        --muted: #8ec4ff;
+        --danger: #ff6f91;
+        --accent: #39ff87;
+        --accent-secondary: #00ffd6;
+        --accent-contrast: #02100d;
+        --border-subtle: rgba(57, 255, 119, 0.15);
+        --border-strong: rgba(57, 255, 119, 0.35);
+        --button-bg: rgba(57, 255, 119, 0.12);
+        --button-secondary-bg: rgba(255, 255, 255, 0.04);
+        --button-shadow: 0 10px 30px rgba(0, 255, 208, 0.25);
+        --icon-btn-bg: rgba(57, 255, 119, 0.15);
+        --icon-btn-color: var(--accent);
+        --shadow-strong: 0 30px 80px rgba(0, 255, 200, 0.2);
+        --shadow-soft: 0 15px 30px rgba(0, 0, 0, 0.35);
+        --input-bg: rgba(3, 8, 20, 0.9);
+        --input-border: rgba(57, 255, 119, 0.3);
+        --input-border-muted: rgba(57, 255, 119, 0.15);
+        --placeholder-bg: rgba(255, 255, 255, 0.04);
+        --placeholder-border: rgba(255, 255, 255, 0.08);
+        --button-primary-bg: linear-gradient(115deg, var(--accent-secondary), var(--accent));
+      }
+
+      :root[data-font-style="system"] {
+        --app-font: var(--font-system);
+        --editor-font: var(--font-system);
+      }
+
+      :root[data-font-style="serif"] {
+        --app-font: var(--font-serif);
+        --editor-font: var(--font-serif);
+      }
+
+      :root[data-font-style="mono"] {
+        --app-font: var(--font-mono);
+        --editor-font: var(--font-mono);
+      }
+
+      :root[data-theme="neon"][data-color-mode="dark"] {
+        --color-scheme: dark;
+        --body-background: radial-gradient(circle at top, #050505 0, #070b18 40%, #020306 100%);
+        --bg: #030509;
+        --bg-panel: rgba(6, 12, 27, 0.95);
+        --bg-pane: rgba(4, 8, 20, 0.92);
+        --sidebar-bg: rgba(5, 10, 24, 0.85);
+        --panel-bg: rgba(8, 16, 38, 0.9);
+        --notes-bg: rgba(8, 16, 40, 0.72);
+        --editor-bg: rgba(2, 5, 14, 0.88);
+        --text: #d8e4ff;
+        --text-strong: #f9fbff;
+        --muted: #8ec4ff;
+        --accent: #39ff87;
+        --accent-secondary: #00ffd6;
+        --accent-contrast: #02100d;
+        --border-subtle: rgba(57, 255, 119, 0.15);
+        --border-strong: rgba(57, 255, 119, 0.35);
+        --button-bg: rgba(57, 255, 119, 0.12);
+        --icon-btn-bg: rgba(57, 255, 119, 0.15);
+        --icon-btn-color: #39ff87;
+        --shadow-strong: 0 30px 80px rgba(0, 255, 200, 0.2);
+        --shadow-soft: 0 15px 35px rgba(0, 0, 0, 0.45);
+        --notes-active: rgba(57, 255, 119, 0.2);
+        --button-primary-bg: linear-gradient(115deg, #00ffd6, #39ff87);
+        --button-secondary-bg: rgba(255, 255, 255, 0.05);
+        --placeholder-bg: rgba(255, 255, 255, 0.03);
+        --placeholder-border: rgba(57, 255, 119, 0.25);
+      }
+
+      :root[data-theme="neon"][data-color-mode="light"] {
+        --color-scheme: light;
+        --body-background: radial-gradient(circle at top, #f8fff7 0, #edfff4 60%, #f5fff9 100%);
+        --bg: #f9fff9;
+        --bg-panel: rgba(255, 255, 255, 0.9);
+        --bg-pane: rgba(255, 255, 255, 0.92);
+        --sidebar-bg: rgba(255, 255, 255, 0.95);
+        --panel-bg: rgba(255, 255, 255, 0.94);
+        --notes-bg: rgba(255, 255, 255, 0.85);
+        --editor-bg: rgba(255, 255, 255, 0.95);
+        --text: #0e1a13;
+        --text-strong: #032315;
+        --muted: #4a5d4f;
+        --accent: #1ab96d;
+        --accent-secondary: #0be0a0;
+        --accent-contrast: #053420;
+        --border-subtle: rgba(12, 74, 50, 0.15);
+        --border-strong: rgba(12, 74, 50, 0.3);
+        --button-bg: rgba(26, 185, 109, 0.12);
+        --icon-btn-bg: rgba(26, 185, 109, 0.14);
+        --icon-btn-color: #0d6f44;
+        --shadow-strong: 0 20px 45px rgba(34, 94, 73, 0.15);
+        --shadow-soft: 0 10px 25px rgba(12, 58, 41, 0.15);
+        --notes-active: rgba(16, 153, 94, 0.12);
+        --button-primary-bg: linear-gradient(115deg, #0be0a0, #1ab96d);
+        --button-secondary-bg: rgba(6, 40, 26, 0.06);
+        --placeholder-bg: rgba(6, 40, 26, 0.04);
+        --placeholder-border: rgba(6, 40, 26, 0.12);
+      }
+
+      :root[data-theme="minimal"][data-color-mode="light"] {
+        --color-scheme: light;
+        --body-background: linear-gradient(180deg, #f7f7f9 0, #fdfdfd 60%, #f3f5f9 100%);
+        --bg: #f7f7f9;
+        --bg-panel: #ffffff;
+        --bg-pane: #ffffff;
+        --sidebar-bg: #fbfbfd;
+        --panel-bg: #ffffff;
+        --notes-bg: #fafbff;
+        --editor-bg: #ffffff;
+        --text: #1f232b;
+        --text-strong: #0f1115;
+        --muted: #6d7380;
+        --accent: #4c7ef3;
+        --accent-secondary: #93b4ff;
+        --accent-contrast: #ffffff;
+        --danger: #ff5c7a;
+        --border-subtle: rgba(41, 55, 97, 0.12);
+        --border-strong: rgba(41, 55, 97, 0.2);
+        --button-bg: rgba(76, 126, 243, 0.1);
+        --icon-btn-bg: rgba(76, 126, 243, 0.16);
+        --icon-btn-color: #2a4ec4;
+        --shadow-strong: 0 20px 50px rgba(30, 37, 59, 0.12);
+        --shadow-soft: 0 12px 30px rgba(44, 55, 99, 0.12);
+        --notes-active: rgba(76, 126, 243, 0.12);
+        --button-primary-bg: linear-gradient(120deg, #93b4ff, #4c7ef3);
+        --button-secondary-bg: rgba(16, 22, 35, 0.04);
+        --placeholder-bg: rgba(76, 126, 243, 0.05);
+        --placeholder-border: rgba(76, 126, 243, 0.18);
+      }
+
+      :root[data-theme="minimal"][data-color-mode="dark"] {
+        --color-scheme: dark;
+        --body-background: radial-gradient(circle at top, #0c0f16 0, #080b11 55%, #05070c 100%);
+        --bg: #0b0f17;
+        --bg-panel: rgba(12, 16, 25, 0.95);
+        --bg-pane: rgba(12, 15, 24, 0.92);
+        --sidebar-bg: rgba(8, 10, 18, 0.9);
+        --panel-bg: rgba(15, 18, 28, 0.92);
+        --notes-bg: rgba(12, 15, 26, 0.85);
+        --editor-bg: rgba(10, 12, 20, 0.95);
+        --text: #d7deff;
+        --text-strong: #f3f5ff;
+        --muted: #8f99c5;
+        --accent: #7bb7ff;
+        --accent-secondary: #b6d7ff;
+        --accent-contrast: #0d141f;
+        --danger: #ff7a9b;
+        --border-subtle: rgba(123, 183, 255, 0.2);
+        --border-strong: rgba(123, 183, 255, 0.35);
+        --button-bg: rgba(123, 183, 255, 0.12);
+        --icon-btn-bg: rgba(123, 183, 255, 0.18);
+        --icon-btn-color: #9bd0ff;
+        --shadow-strong: 0 25px 60px rgba(7, 12, 26, 0.65);
+        --shadow-soft: 0 15px 35px rgba(8, 12, 26, 0.55);
+        --notes-active: rgba(123, 183, 255, 0.18);
+        --button-primary-bg: linear-gradient(120deg, #b6d7ff, #7bb7ff);
+        --button-secondary-bg: rgba(7, 11, 19, 0.5);
+        --placeholder-bg: rgba(123, 183, 255, 0.06);
+        --placeholder-border: rgba(123, 183, 255, 0.22);
+      }
+
+      :root[data-theme="cupertino"][data-color-mode="light"] {
+        --color-scheme: light;
+        --body-background: linear-gradient(180deg, #fefefd 0, #f9f7f2 60%, #fdfdfb 100%);
+        --bg: #fdfcfa;
+        --bg-panel: rgba(255, 255, 255, 0.95);
+        --bg-pane: rgba(255, 255, 255, 0.96);
+        --sidebar-bg: rgba(255, 255, 255, 0.96);
+        --panel-bg: rgba(255, 255, 255, 0.95);
+        --notes-bg: rgba(255, 255, 255, 0.88);
+        --editor-bg: rgba(255, 255, 255, 0.98);
+        --text: #1c1c1e;
+        --text-strong: #000000;
+        --muted: #6e6e73;
+        --accent: #f0a33c;
+        --accent-secondary: #ffd262;
+        --accent-contrast: #3c2400;
+        --danger: #ff3b30;
+        --border-subtle: rgba(28, 28, 30, 0.12);
+        --border-strong: rgba(28, 28, 30, 0.2);
+        --button-bg: rgba(240, 163, 60, 0.12);
+        --icon-btn-bg: rgba(240, 163, 60, 0.18);
+        --icon-btn-color: #b55800;
+        --shadow-strong: 0 15px 40px rgba(146, 118, 81, 0.2);
+        --shadow-soft: 0 12px 24px rgba(0, 0, 0, 0.08);
+        --notes-active: rgba(240, 163, 60, 0.12);
+        --button-primary-bg: linear-gradient(120deg, #ffd262, #f0a33c);
+        --button-secondary-bg: rgba(0, 0, 0, 0.04);
+        --placeholder-bg: rgba(240, 163, 60, 0.08);
+        --placeholder-border: rgba(240, 163, 60, 0.22);
+      }
+
+      :root[data-theme="cupertino"][data-color-mode="dark"] {
+        --color-scheme: dark;
+        --body-background: linear-gradient(180deg, #1c1c1e 0, #0f0f11 100%);
+        --bg: #1c1c1e;
+        --bg-panel: rgba(26, 26, 30, 0.95);
+        --bg-pane: rgba(18, 18, 20, 0.94);
+        --sidebar-bg: rgba(20, 20, 22, 0.95);
+        --panel-bg: rgba(22, 22, 26, 0.92);
+        --notes-bg: rgba(18, 18, 20, 0.9);
+        --editor-bg: rgba(14, 14, 16, 0.96);
+        --text: #f5f5f7;
+        --text-strong: #ffffff;
+        --muted: #98989f;
+        --accent: #ffb347;
+        --accent-secondary: #ffd479;
+        --accent-contrast: #2d1600;
+        --danger: #ff453a;
+        --border-subtle: rgba(255, 255, 255, 0.08);
+        --border-strong: rgba(255, 255, 255, 0.18);
+        --button-bg: rgba(255, 179, 71, 0.14);
+        --icon-btn-bg: rgba(255, 179, 71, 0.2);
+        --icon-btn-color: #ffd479;
+        --shadow-strong: 0 25px 55px rgba(0, 0, 0, 0.65);
+        --shadow-soft: 0 15px 30px rgba(0, 0, 0, 0.45);
+        --notes-active: rgba(255, 179, 71, 0.2);
+        --button-primary-bg: linear-gradient(120deg, #ffd479, #ffb347);
+        --button-secondary-bg: rgba(255, 255, 255, 0.04);
+        --placeholder-bg: rgba(255, 179, 71, 0.08);
+        --placeholder-border: rgba(255, 179, 71, 0.2);
+      }
+
+      :root[data-theme="pink"][data-color-mode="light"] {
+        --color-scheme: light;
+        --body-background: linear-gradient(180deg, #fff5f9 0, #ffe4ef 60%, #fff0f8 100%);
+        --bg: #fff7fb;
+        --bg-panel: rgba(255, 255, 255, 0.92);
+        --bg-pane: rgba(255, 252, 254, 0.96);
+        --sidebar-bg: rgba(255, 240, 246, 0.95);
+        --panel-bg: rgba(255, 255, 255, 0.94);
+        --notes-bg: rgba(255, 246, 250, 0.9);
+        --editor-bg: rgba(255, 255, 255, 0.98);
+        --text: #2f1821;
+        --text-strong: #15070c;
+        --muted: #a05b76;
+        --accent: #ff6fa9;
+        --accent-secondary: #ff94c9;
+        --accent-contrast: #401324;
+        --danger: #ff4d7f;
+        --border-subtle: rgba(224, 120, 163, 0.2);
+        --border-strong: rgba(224, 120, 163, 0.4);
+        --button-bg: rgba(255, 111, 169, 0.12);
+        --icon-btn-bg: rgba(255, 111, 169, 0.18);
+        --icon-btn-color: #c72563;
+        --shadow-strong: 0 20px 40px rgba(255, 111, 169, 0.2);
+        --shadow-soft: 0 12px 24px rgba(216, 98, 146, 0.15);
+        --notes-active: rgba(255, 111, 169, 0.15);
+        --button-primary-bg: linear-gradient(120deg, #ff94c9, #ff6fa9);
+        --button-secondary-bg: rgba(64, 19, 36, 0.05);
+        --placeholder-bg: rgba(255, 111, 169, 0.08);
+        --placeholder-border: rgba(255, 111, 169, 0.2);
+      }
+
+      :root[data-theme="pink"][data-color-mode="dark"] {
+        --color-scheme: dark;
+        --body-background: radial-gradient(circle at top, #1a0912 0, #12020a 55%, #070109 100%);
+        --bg: #13030b;
+        --bg-panel: rgba(24, 6, 16, 0.94);
+        --bg-pane: rgba(19, 5, 13, 0.92);
+        --sidebar-bg: rgba(20, 6, 14, 0.94);
+        --panel-bg: rgba(24, 8, 18, 0.9);
+        --notes-bg: rgba(24, 6, 18, 0.88);
+        --editor-bg: rgba(13, 2, 10, 0.96);
+        --text: #ffe6f0;
+        --text-strong: #fff3f8;
+        --muted: #ffa7c9;
+        --accent: #ff78c9;
+        --accent-secondary: #ff9bde;
+        --accent-contrast: #2b0a18;
+        --danger: #ff4f7f;
+        --border-subtle: rgba(255, 120, 201, 0.25);
+        --border-strong: rgba(255, 120, 201, 0.45);
+        --button-bg: rgba(255, 120, 201, 0.18);
+        --icon-btn-bg: rgba(255, 120, 201, 0.2);
+        --icon-btn-color: #ffb8e6;
+        --shadow-strong: 0 25px 60px rgba(8, 0, 6, 0.65);
+        --shadow-soft: 0 15px 35px rgba(0, 0, 0, 0.5);
+        --notes-active: rgba(255, 120, 201, 0.2);
+        --button-primary-bg: linear-gradient(120deg, #ff9bde, #ff78c9);
+        --button-secondary-bg: rgba(255, 255, 255, 0.08);
+        --placeholder-bg: rgba(255, 120, 201, 0.12);
+        --placeholder-border: rgba(255, 120, 201, 0.35);
+      }
+
+      :root[data-theme="purple"][data-color-mode="light"] {
+        --color-scheme: light;
+        --body-background: linear-gradient(180deg, #f9f6ff 0, #ece3ff 60%, #f5edff 100%);
+        --bg: #f9f6ff;
+        --bg-panel: rgba(255, 255, 255, 0.94);
+        --bg-pane: rgba(248, 245, 255, 0.96);
+        --sidebar-bg: rgba(245, 240, 255, 0.95);
+        --panel-bg: rgba(255, 255, 255, 0.95);
+        --notes-bg: rgba(248, 245, 255, 0.9);
+        --editor-bg: rgba(255, 255, 255, 0.98);
+        --text: #231437;
+        --text-strong: #150824;
+        --muted: #6c5a8d;
+        --accent: #8f6bff;
+        --accent-secondary: #b79dff;
+        --accent-contrast: #190b36;
+        --danger: #ff5c97;
+        --border-subtle: rgba(111, 90, 180, 0.2);
+        --border-strong: rgba(111, 90, 180, 0.4);
+        --button-bg: rgba(143, 107, 255, 0.12);
+        --icon-btn-bg: rgba(143, 107, 255, 0.18);
+        --icon-btn-color: #5332c8;
+        --shadow-strong: 0 20px 46px rgba(83, 50, 200, 0.18);
+        --shadow-soft: 0 12px 30px rgba(61, 42, 122, 0.16);
+        --notes-active: rgba(143, 107, 255, 0.16);
+        --button-primary-bg: linear-gradient(120deg, #b79dff, #8f6bff);
+        --button-secondary-bg: rgba(32, 12, 61, 0.05);
+        --placeholder-bg: rgba(143, 107, 255, 0.1);
+        --placeholder-border: rgba(143, 107, 255, 0.22);
+      }
+
+      :root[data-theme="purple"][data-color-mode="dark"] {
+        --color-scheme: dark;
+        --body-background: radial-gradient(circle at top, #100820 0, #080112 55%, #05000a 100%);
+        --bg: #0d041a;
+        --bg-panel: rgba(16, 6, 32, 0.94);
+        --bg-pane: rgba(11, 4, 23, 0.92);
+        --sidebar-bg: rgba(13, 6, 26, 0.92);
+        --panel-bg: rgba(16, 7, 30, 0.9);
+        --notes-bg: rgba(15, 6, 28, 0.88);
+        --editor-bg: rgba(9, 3, 18, 0.96);
+        --text: #efebff;
+        --text-strong: #ffffff;
+        --muted: #b5a3ff;
+        --accent: #a982ff;
+        --accent-secondary: #c9b7ff;
+        --accent-contrast: #130429;
+        --danger: #ff6587;
+        --border-subtle: rgba(169, 130, 255, 0.3);
+        --border-strong: rgba(169, 130, 255, 0.45);
+        --button-bg: rgba(169, 130, 255, 0.22);
+        --icon-btn-bg: rgba(169, 130, 255, 0.24);
+        --icon-btn-color: #d8caff;
+        --shadow-strong: 0 25px 60px rgba(3, 0, 15, 0.65);
+        --shadow-soft: 0 15px 35px rgba(7, 2, 18, 0.55);
+        --notes-active: rgba(169, 130, 255, 0.28);
+        --button-primary-bg: linear-gradient(120deg, #c9b7ff, #a982ff);
+        --button-secondary-bg: rgba(255, 255, 255, 0.08);
+        --placeholder-bg: rgba(169, 130, 255, 0.16);
+        --placeholder-border: rgba(169, 130, 255, 0.35);
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        font-family: var(--app-font, "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif);
+        background: var(--body-background, var(--bg));
+        color: var(--text);
+        transition: background 0.3s ease, color 0.3s ease;
+      }
+
+      body {
+        background-color: var(--bg);
+      }
+
+      #app-root {
+        height: 100%;
+      }
+
+      .icon-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 999px;
+        border: 1px solid var(--border-strong);
+        background: var(--icon-btn-bg);
+        color: var(--icon-btn-color);
+        cursor: pointer;
+        box-shadow: 0 8px 18px var(--border-subtle);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        transition: transform 0.15s, box-shadow 0.15s;
+      }
+
+      .icon-btn--ghost {
+        background: var(--button-secondary-bg);
+        border-color: var(--border-subtle);
+        color: var(--text);
+        box-shadow: none;
+      }
+
+      .icon-btn:focus,
+      .icon-btn:hover {
+        outline: none;
+        transform: translateY(-1px);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+      }
+
+      .icon-btn:focus-visible,
+      .btn:focus-visible,
+      .editor-toolbar-btn:focus-visible,
+      .notes-list-item:focus-visible,
+      .font-style-select:focus-visible,
+      .editor-title-input:focus-visible,
+      .editor-body-input:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 3px;
+      }
+
+      .btn {
+        border-radius: 999px;
+        border: 1px solid var(--border-strong);
+        padding: 6px 14px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        background: var(--button-bg);
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        transition: transform 0.15s, box-shadow 0.15s;
+        box-shadow: none;
+      }
+
+      .btn-primary {
+        background: var(--button-primary-bg);
+        color: var(--accent-contrast);
+        box-shadow: var(--button-shadow);
+        border-color: transparent;
+      }
+
+      .btn-danger {
+        background: linear-gradient(120deg, var(--danger), #ff8f5c);
+        color: #ffffff;
+        border-color: transparent;
+      }
+
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+
+      .btn-small {
+        font-size: 0.7rem;
+        padding: 4px 10px;
+      }
+
+      .btn-icon-only {
+        width: 42px;
+        height: 42px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        letter-spacing: 0;
+      }
+
+      .panel {
+        border: 1px solid var(--border-subtle);
+        border-radius: 10px;
+        padding: 12px;
+        background: var(--panel-bg);
+      }
+
+      .panel h3 {
+        margin: 0 0 8px;
+        font-size: 0.95rem;
+        color: var(--text-strong);
+      }
+
+      .link-output,
+      .link-input {
+        width: 100%;
+        min-height: 72px;
+        border-radius: 8px;
+        padding: 6px 8px;
+        font-family: var(--editor-font, "JetBrains Mono", monospace);
+        font-size: 0.8rem;
+        box-sizing: border-box;
+        background: var(--input-bg);
+        color: var(--text);
+      }
+
+      .link-output {
+        border: 1px dashed var(--border-strong);
+      }
+
+      .link-input {
+        border: 1px solid var(--input-border);
+      }
+
+      .qr-container {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-top: 12px;
+        flex-wrap: wrap;
+      }
+
+      .qr-box {
+        width: 120px;
+        height: 120px;
+        border: 1px dashed var(--border-strong);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--input-bg);
+        color: var(--accent);
+      }
+
+      .vault-share-modal {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        text-align: left;
+        color: var(--text);
+      }
+
+      .vault-share-modal .modal-note,
+      .vault-share-modal .modal-hint {
+        font-size: 0.85rem;
+        margin: 0;
+        opacity: 0.9;
+      }
+
+      .vault-share-modal .modal-section {
+        border: 1px solid var(--border-subtle);
+        border-radius: 10px;
+        padding: 10px;
+        background: var(--panel-bg);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .notes-modal.swal2-popup {
+        width: min(460px, 94vw);
+        border-radius: 24px;
+        padding: 28px 0 18px;
+        background: var(--bg-panel);
+        border: 1px solid var(--border-subtle);
+        box-shadow: var(--shadow-strong);
+      }
+
+      .notes-modal .swal2-close {
+        color: var(--muted);
+        right: 18px;
+        top: 18px;
+      }
+
+      .notes-modal__body {
+        margin: 0;
+        padding: 0 28px 0;
+        max-height: 70vh;
+        overflow: auto;
+      }
+
+      .placeholder-card {
+        border: 1px dashed var(--placeholder-border);
+        border-radius: 10px;
+        padding: 12px;
+        background: var(--placeholder-bg);
+        color: var(--muted);
+        font-size: 0.85rem;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .placeholder-card .placeholder-title {
+        font-weight: 600;
+        color: var(--text-strong);
+      }
+
+      .pearl-swal.swal2-popup {
+        background: var(--bg-panel);
+        color: var(--text);
+        border-radius: 14px;
+        border: 1px solid var(--border-subtle);
+        box-shadow: var(--shadow-soft);
+        padding: 16px 18px;
+      }
+
+      .pearl-swal .swal2-title {
+        color: var(--text-strong);
+        font-size: 1rem;
+        margin-bottom: 8px;
+      }
+
+      .pearl-swal .swal2-html-container {
+        margin: 0;
+        padding: 0;
+        color: var(--text);
+      }
+
+      .pearl-swal .swal2-close {
+        color: var(--muted);
+      }
+
+      .pearl-swal .swal2-actions {
+        display: none !important;
+      }
+
+      .theme-picker {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .theme-picker-intro {
+        margin: 0;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+
+      .theme-card-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .theme-card {
+        flex: 1;
+        min-width: 180px;
+        border: 1px solid var(--border-subtle);
+        border-radius: 12px;
+        padding: 12px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        cursor: pointer;
+        background: var(--panel-bg);
+        transition: border 0.15s, transform 0.15s;
+      }
+
+      .theme-card--active {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px rgba(57, 255, 119, 0.3);
+      }
+
+      .theme-card-preview {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .theme-card-preview--neon.theme-card-preview--dark {
+        background: linear-gradient(135deg, #031c22, #073b2a);
+      }
+
+      .theme-card-preview--neon.theme-card-preview--light {
+        background: linear-gradient(135deg, #ecfff6, #cdf2e1);
+      }
+
+      .theme-card-preview--minimal.theme-card-preview--dark {
+        background: linear-gradient(135deg, #0e1424, #1c2647);
+      }
+
+      .theme-card-preview--minimal.theme-card-preview--light {
+        background: linear-gradient(135deg, #f8f8fb, #dee5f7);
+      }
+
+      .theme-card-preview--cupertino.theme-card-preview--dark {
+        background: linear-gradient(135deg, #191b1f, #2c2f36);
+      }
+
+      .theme-card-preview--cupertino.theme-card-preview--light {
+        background: linear-gradient(135deg, #fefbf3, #f0ebe0);
+      }
+
+      .theme-card-preview--pink.theme-card-preview--light {
+        background: linear-gradient(135deg, #ffe0ef, #ffc1dc);
+      }
+
+      .theme-card-preview--pink.theme-card-preview--dark {
+        background: linear-gradient(135deg, #2b0b1a, #5c1031);
+      }
+
+      .theme-card-preview--purple.theme-card-preview--light {
+        background: linear-gradient(135deg, #f1e8ff, #cfc0ff);
+      }
+
+      .theme-card-preview--purple.theme-card-preview--dark {
+        background: linear-gradient(135deg, #190933, #3f1766);
+      }
+
+      .theme-card-label {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+        font-size: 0.85rem;
+      }

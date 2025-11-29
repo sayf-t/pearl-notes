@@ -1,0 +1,204 @@
+.sidebarShell {
+  --sidebar-panel-padding: 16px;
+  --sidebar-width: 280px;
+  display: flex;
+  flex-direction: column;
+  width: var(--sidebar-width);
+  padding: 18px var(--sidebar-panel-padding);
+  box-sizing: border-box;
+  transition: width 0.2s ease;
+  gap: 8px;
+  border-right: 1px solid var(--border-subtle);
+  min-height: 0;
+  position: relative;
+  z-index: 2;
+  background: transparent;
+}
+
+.sidebarShellInline {
+  display: flex;
+}
+
+.sidebarShellModal {
+  width: min(420px, 92vw);
+  max-width: 420px;
+  border-right: none;
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  background: var(--sidebar-bg);
+  box-shadow: var(--shadow-soft);
+  padding: 20px;
+  display: flex;
+}
+
+.sidebarShellCollapsed {
+  --sidebar-panel-padding: 6px;
+  width: 60px;
+  padding: 12px 6px;
+}
+
+.sidebarActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  box-sizing: border-box;
+}
+
+.sidebarActionsCollapsed {
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.sidebarActionsModal {
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.sidebar {
+  width: 100%;
+  flex: 1;
+  background: transparent;
+  padding: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: width 0.2s ease;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sidebarCollapsed {
+  width: 0;
+  padding: 0;
+  border-right: none;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.notesList {
+  list-style: none;
+  margin: 0 calc(-1 * var(--sidebar-panel-padding));
+  width: calc(100% + 2 * var(--sidebar-panel-padding));
+  padding: 0;
+  border-radius: 20px;
+  background: var(--notes-bg);
+  border: 1px solid var(--border-subtle);
+  border-left: 0;
+  border-right: 0;
+  box-shadow: var(--shadow-soft);
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  min-height: 0;
+  box-sizing: border-box;
+  scrollbar-gutter: stable both-edges;
+}
+
+.fieldLabel {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.notesListItem {
+  padding: 12px 18px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: background 0.15s, color 0.15s;
+  background: transparent;
+}
+
+.notesListItem:last-child {
+  border-bottom: none;
+}
+
+.notesListItemActive {
+  background: var(--notes-active);
+}
+
+.notesListTitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-strong);
+}
+
+.notesListMeta {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.buttonRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  box-sizing: border-box;
+}
+
+.fontMenuTrigger {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--icon-btn-bg);
+  color: var(--icon-btn-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-shadow: 0 8px 18px var(--border-subtle);
+  box-sizing: border-box;
+}
+
+.fontMenuTrigger:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.fontMenuSelect {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+}
+
+.sidebarFooter {
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  justify-content: flex-start;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+.sidebarShellModal .notesList {
+  max-height: min(60vh, 420px);
+  margin: 0;
+  width: 100%;
+}
+
+.sidebarShellModal .notesListItem {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+@media (max-width: 1024px) {
+  .sidebarShellInline {
+    display: none;
+  }
+}
+

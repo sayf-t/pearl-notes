@@ -1,0 +1,116 @@
+.statusBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.statusBarControls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: flex-end;
+  box-sizing: border-box;
+}
+
+.statusBarMeta {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-sizing: border-box;
+}
+
+.syncStatus {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.statusMessage {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.exportDir {
+  font-size: 0.7rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebarToggleBtn {
+  display: none;
+}
+
+.statusBarCollapsed {
+  justify-content: space-between;
+  border-top: none;
+  padding-top: 0;
+}
+
+.collapsedNotice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.statusSuccess {
+  color: #7be4a2;
+}
+
+.statusError {
+  color: var(--danger);
+}
+
+.statusMuted {
+  color: var(--muted);
+}
+
+.fontStyleSelect {
+  appearance: none;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  padding: 4px 28px 4px 10px;
+  background: var(--button-secondary-bg);
+  color: var(--text);
+  font-size: 0.75rem;
+  font-family: inherit;
+  position: relative;
+  box-sizing: border-box;
+  min-width: 140px;
+}
+
+.fontStyleSelect:focus {
+  outline: none;
+  border-color: var(--border-strong);
+}
+
+@media (max-width: 1024px) {
+  .statusBar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .statusBarControls {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .sidebarToggleBtn {
+    display: inline-flex;
+  }
+
+  .statusBarCollapsed {
+    flex-direction: row;
+  }
+}
+
