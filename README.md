@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Local-first markdown notes with peer-to-peer sync, designed to keep the repo approachable for junior contributors. Detailed product and architecture context now lives in [`prd.md`](./prd.md) and [`implementation_plan.md`](./implementation_plan.md); this README focuses on the essentials you need to boot, extend, and reason about the codebase quickly.
+Local-first markdown notes with peer-to-peer sync, designed to keep the repo approachable for junior contributors. This README focuses on the essentials you need to boot, extend, and reason about the codebase quickly.
 
 ## Features
 
