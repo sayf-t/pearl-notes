@@ -11,7 +11,7 @@ const commonConfig = {
   bundle: true,
   sourcemap: true,
   format: 'esm',
-  platform: 'browser',
+  platform: 'browser',  // Target browser (Electron renderer); handles polyfills
   target: ['es2020'],
   loader: {
     '.js': 'jsx'
@@ -21,6 +21,9 @@ const commonConfig = {
   },
   minify: !watch,
   logLevel: 'info',
+  alias: {
+    'sodium-native': 'sodium-javascript'  // Use JS fallback instead of native
+  },
   plugins: [
     cssModulesPlugin({
       // keep class names readable for easier debugging
@@ -58,4 +61,3 @@ if (watch) {
   await copyAssets()
   console.log('[ui-build] bundle created.')
 }
-
