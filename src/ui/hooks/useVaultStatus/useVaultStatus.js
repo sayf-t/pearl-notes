@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { copyTextToClipboard } from '../../utils/clipboard.js'
 import { formatVaultStatus, openVaultShareModal } from '../../utils/vault.js'
 
-export function useVaultStatus ({ pearl, notify, uiLog, refreshNotes }) {
+export function useVaultStatus ({ pearl, notify, uiLog, refreshNotes, forceReloadNotes, pauseAutoRefresh, resumeAutoRefresh }) {
   const [vaultStatus, setVaultStatus] = useState(null)
 
   const refreshVaultStatus = useCallback(async () => {
@@ -40,9 +40,12 @@ export function useVaultStatus ({ pearl, notify, uiLog, refreshNotes }) {
       notify,
       pearl,
       refreshVaultStatus,
-      refreshNotes
+      refreshNotes,
+      forceReloadNotes,
+      pauseAutoRefresh,
+      resumeAutoRefresh
     })
-  }, [notify, pearl, refreshVaultStatus, refreshNotes])
+  }, [notify, pearl, refreshVaultStatus, refreshNotes, forceReloadNotes, pauseAutoRefresh, resumeAutoRefresh])
 
   const syncStatusText = useMemo(() => formatVaultStatus(vaultStatus), [vaultStatus])
   const exportDir = vaultStatus?.exportDir ?? null

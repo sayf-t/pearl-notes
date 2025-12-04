@@ -1,10 +1,21 @@
 import b4a from 'b4a'
 import { randomId as generateRandomId } from '../vault/crypto.js'
 import { ensureDrive } from '../vault/hyperdriveClient.js'
+import { ensureVaultConfig } from '../vault/vaultConfig.js'
 import { queueMirror } from './notesMirror.js'
 import { parseNote, serializeNote } from './notesSerialization.js'
 
 const NOTES_DIR = '/notes'
+const DOWNLOAD_TIMEOUT_MS = 10000 // 10 seconds
+
+export function withTimeout(promise, timeoutMs) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(`Operation timed out after ${timeoutMs}ms`)), timeoutMs)
+    )
+  ])
+}
 
 function nowIso () {
   return new Date().toISOString()
@@ -14,11 +25,14 @@ function notePath (id) {
   return `${NOTES_DIR}/${id}.md`
 }
 
-async function downloadPath (drive, targetPath) {
+export async function downloadPath (drive, targetPath) {
   try {
-    await drive.download(targetPath)
+    await withTimeout(drive.download(targetPath), DOWNLOAD_TIMEOUT_MS)
   } catch (err) {
-    if (err?.code !== 'ENOENT') throw err
+    // Ignore timeout and ENOENT errors - file might not exist or still downloading
+    if (err?.code !== 'ENOENT' && !err.message?.includes('timed out')) {
+      throw err
+    }
   }
 }
 
@@ -48,12 +62,15 @@ async function allocateNoteId (drive) {
 }
 
 async function readAllNoteNames (drive) {
-  await downloadPath(drive, NOTES_DIR)
   const names = []
   try {
-    for await (const entry of drive.readdir(NOTES_DIR)) {
-      const name = typeof entry === 'string' ? entry : entry?.name || entry?.path || ''
-      if (name) names.push(name)
+    // Use drive.list() for more efficient directory enumeration
+    const listStream = drive.list(NOTES_DIR, { recursive: false })
+    for await (const entry of listStream) {
+      const name = entry.key.replace(NOTES_DIR + '/', '')
+      if (name && name.endsWith('.md')) {
+        names.push(name)
+      }
     }
   } catch (err) {
     if (err?.code !== 'ENOENT') throw err
@@ -62,23 +79,49 @@ async function readAllNoteNames (drive) {
 }
 
 export async function listNotes () {
-  const { drive } = await ensureDrive()
-  const noteFiles = await readAllNoteNames(drive)
-  const notes = []
-  for (const fileName of noteFiles) {
-    if (!fileName.endsWith('.md')) continue
-    const raw = await readFileAsString(drive, `${NOTES_DIR}/${fileName}`)
-    const parsed = parseNote(raw)
-    notes.push({
-      id: parsed.id || fileName.replace(/\.md$/, ''),
-      title: parsed.title || '(Untitled)',
-      createdAt: parsed.createdAt,
-      updatedAt: parsed.updatedAt,
-      summary: (parsed.body || '').slice(0, 120)
-    })
+  try {
+    const cfg = await ensureVaultConfig()
+    const { drive } = await ensureDrive({ keyHex: cfg.driveKey })
+    const noteFiles = await readAllNoteNames(drive)
+
+    if (noteFiles.length === 0) {
+      console.log('[Notes] No notes found in vault')
+      return []
+    }
+
+    console.log(`[Notes] Loading ${noteFiles.length} notes...`)
+
+    const notes = []
+    let loadErrors = 0
+
+    for (const fileName of noteFiles) {
+      if (!fileName.endsWith('.md')) continue
+      try {
+        const raw = await readFileAsString(drive, `${NOTES_DIR}/${fileName}`)
+        const parsed = parseNote(raw)
+        notes.push({
+          id: parsed.id || fileName.replace(/\.md$/, ''),
+          title: parsed.title || '(Untitled)',
+          createdAt: parsed.createdAt,
+          updatedAt: parsed.updatedAt,
+          summary: (parsed.body || '').slice(0, 120)
+        })
+      } catch (err) {
+        console.warn(`[Notes] Failed to load note ${fileName}:`, err.message || err)
+        loadErrors++
+        // Skip this note but continue with others
+      }
+    }
+
+    notes.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))
+
+    console.log(`[Notes] Loaded ${notes.length} notes${loadErrors > 0 ? ` (${loadErrors} failed)` : ''}`)
+    return notes
+  } catch (err) {
+    console.warn(`[Notes] Failed to list notes, returning empty list: ${err.message || err}`)
+    // Return empty list instead of throwing - vault might be empty or still syncing
+    return []
   }
-  notes.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))
-  return notes
 }
 
 export async function readNote (id) {

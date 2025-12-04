@@ -43,7 +43,10 @@ export default function App ({ pearl, themeManager, markdown, uiLog }) {
     toggleSidebar,
     handlePreviewToggle,
     updateStatus,
-    loadNotes
+    loadNotes,
+    forceReloadNotes,
+    pauseAutoRefresh,
+    resumeAutoRefresh
   } = useNotesWorkspace({ pearl, markdown })
 
   const themeState = useThemeState(themeManager)
@@ -91,7 +94,10 @@ export default function App ({ pearl, themeManager, markdown, uiLog }) {
     pearl,
     notify: updateStatus,
     uiLog,
-    refreshNotes: () => loadNotes({ silent: true })
+    refreshNotes: () => loadNotes({ silent: true }),
+    forceReloadNotes,
+    pauseAutoRefresh,
+    resumeAutoRefresh
   })
 
   const previewButtonLabel = previewMode === 'preview' ? 'Back to editor' : 'Preview'
@@ -101,24 +107,24 @@ export default function App ({ pearl, themeManager, markdown, uiLog }) {
       : -1
   const sidebarSharedProps = useMemo(
     () => ({
-      notes,
-      selectedNoteId,
-      onSelectNote: openNote,
-      onNewNote: handleNewNote,
-      onDeleteNote: handleDeleteNote,
-      onVaultShare: handleVaultShare,
-      onThemePicker: handleThemePicker,
-      formatNoteMeta,
-      previewMode,
-      previewButtonLabel,
-      onPreviewToggle: handlePreviewToggle,
-      onCopyVaultKey: handleCopyVaultKey,
-      hasVaultKey: Boolean(vaultStatus?.driveKey),
-      onStatusBarToggle: handleStatusBarToggle,
-      isStatusBarVisible,
-      fontStyle: themeState.fontStyle,
-      onFontChange: handleFontChange
-    }),
+        notes,
+        selectedNoteId,
+        onSelectNote: openNote,
+        onNewNote: handleNewNote,
+        onDeleteNote: handleDeleteNote,
+        onVaultShare: handleVaultShare,
+        onThemePicker: handleThemePicker,
+        formatNoteMeta,
+        previewMode,
+        previewButtonLabel,
+        onPreviewToggle: handlePreviewToggle,
+        onCopyVaultKey: handleCopyVaultKey,
+        hasVaultKey: Boolean(vaultStatus?.driveKey),
+        onStatusBarToggle: handleStatusBarToggle,
+        isStatusBarVisible,
+        fontStyle: themeState.fontStyle,
+        onFontChange: handleFontChange
+      }),
     [
       notes,
       selectedNoteId,
@@ -132,10 +138,8 @@ export default function App ({ pearl, themeManager, markdown, uiLog }) {
       previewButtonLabel,
       handlePreviewToggle,
       handleCopyVaultKey,
-      vaultStatus?.driveKey,
       handleStatusBarToggle,
       isStatusBarVisible,
-      themeState.fontStyle,
       handleFontChange
     ]
   )

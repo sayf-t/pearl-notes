@@ -614,7 +614,7 @@
         color: var(--muted);
       }
 
-      .pearl-swal .swal2-actions {
+      .pearl-swal .swal2-actions:not(.swal2-loading) {
         display: none !important;
       }
 

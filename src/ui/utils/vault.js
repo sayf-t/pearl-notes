@@ -15,7 +15,7 @@ export function formatVaultStatus (status) {
   return parts.join(' · ')
 }
 
-export function openVaultShareModal ({ pearl, notify, refreshVaultStatus, refreshNotes }) {
+export function openVaultShareModal ({ pearl, notify, refreshVaultStatus, refreshNotes, forceReloadNotes, pauseAutoRefresh, resumeAutoRefresh }) {
   const SwalLib = getSwal()
   if (!SwalLib) {
     notify('SweetAlert unavailable — cannot open share modal.', 'error')
@@ -48,6 +48,7 @@ export function openVaultShareModal ({ pearl, notify, refreshVaultStatus, refres
     showConfirmButton: false,
     focusConfirm: false,
     didOpen: async (popup) => {
+      console.log('[Vault Modal] Modal opened')
       const messageEl = popup.querySelector('[data-field="share-message"]')
       const outputEl = popup.querySelector('[data-field="share-output"]')
       const inputEl = popup.querySelector('[data-field="share-input"]')
@@ -55,6 +56,23 @@ export function openVaultShareModal ({ pearl, notify, refreshVaultStatus, refres
       const copyBtn = popup.querySelector('[data-action="copy-share"]')
       const joinBtn = popup.querySelector('[data-action="join-share"]')
       const currentVaultEl = popup.querySelector('[data-field="current-vault"]')
+
+      console.log('[Vault Modal] Elements found:', {
+        messageEl: !!messageEl,
+        outputEl: !!outputEl,
+        inputEl: !!inputEl,
+        createBtn: !!createBtn,
+        copyBtn: !!copyBtn,
+        joinBtn: !!joinBtn,
+        currentVaultEl: !!currentVaultEl
+      })
+
+      // Reset modal state
+      if (inputEl) inputEl.value = ''
+      if (outputEl) outputEl.value = ''
+      if (copyBtn) copyBtn.disabled = true
+      if (joinBtn) joinBtn.disabled = false
+      if (createBtn) createBtn.disabled = false
 
       const setMessage = (msg, tone = 'info') => {
         if (!messageEl) return
@@ -89,7 +107,7 @@ export function openVaultShareModal ({ pearl, notify, refreshVaultStatus, refres
       }
 
       // Real-time validation as user types
-      inputEl?.addEventListener('input', () => {
+      const handleInput = () => {
         const value = inputEl.value.trim()
         if (value) {
           const validation = validateLink(value)
@@ -101,7 +119,8 @@ export function openVaultShareModal ({ pearl, notify, refreshVaultStatus, refres
         } else {
           setMessage('Paste a pearl-vault:// link to join another vault.', 'info')
         }
-      })
+      }
+      inputEl?.addEventListener('input', handleInput)
 
       createBtn?.addEventListener('click', async () => {
         setMessage('Creating share link…')
@@ -129,7 +148,10 @@ export function openVaultShareModal ({ pearl, notify, refreshVaultStatus, refres
       })
 
       joinBtn?.addEventListener('click', async () => {
+        console.log('[Vault Modal] Join button clicked')
         const value = inputEl.value.trim()
+        console.log('[Vault Modal] Input value:', value)
+
         if (!value) {
           setMessage('Paste a vault link first.', 'error')
           inputEl.focus()
@@ -138,53 +160,82 @@ export function openVaultShareModal ({ pearl, notify, refreshVaultStatus, refres
 
         // Validate link format first
         const validation = validateLink(value)
+        console.log('[Vault Modal] Validation result:', validation)
         if (!validation.valid) {
           setMessage(validation.error, 'error')
           inputEl.focus()
           return
         }
 
+        // Disable button during join process
+        if (joinBtn) joinBtn.disabled = true
+
         // Check if user is switching from an existing vault
         try {
           const currentKey = await pearl.getCurrentVaultKey()
-          if (currentKey && currentKey.toLowerCase() !== validation.driveKey.toLowerCase()) {
-            // Show confirmation dialog
-            const confirmResult = await SwalLib.fire({
-              title: 'Switch to different vault?',
-              html: `
-                <p>You are currently using vault: <code>${currentKey.slice(0, 12)}…</code></p>
-                <p>You are about to switch to vault: <code>${validation.driveKey.slice(0, 12)}…</code></p>
-                <p style="margin-top: 1em; color: var(--muted);">
-                  Your current vault's data will remain accessible, but you'll be viewing a different vault.
-                </p>
-              `,
-              icon: 'warning',
-              showCancelButton: true,
-              confirmButtonText: 'Yes, switch vault',
-              cancelButtonText: 'Cancel',
-              customClass: { popup: 'pearl-swal' }
-            })
+          console.log('[Vault Join] Current vault key:', currentKey)
+          console.log('[Vault Join] Target drive key:', validation.driveKey)
 
-            if (!confirmResult.isConfirmed) {
+          if (currentKey && currentKey.toLowerCase() !== validation.driveKey.toLowerCase()) {
+            console.log('[Vault Join] Showing confirmation dialog for vault switch')
+
+            // Use browser confirm dialog to avoid SweetAlert2 nesting issues
+            const userConfirmed = window.confirm(
+              `Switch to different vault?\n\n` +
+              `Current vault: ${currentKey.slice(0, 12)}…\n` +
+              `New vault: ${validation.driveKey.slice(0, 12)}…\n\n` +
+              `Your current vault's data will remain accessible, but you'll be viewing a different vault.`
+            )
+
+            console.log('[Vault Join] User confirmed vault switch:', userConfirmed)
+
+            if (!userConfirmed) {
               setMessage('Vault switch cancelled.', 'info')
               return
             }
+          } else {
+            console.log('[Vault Join] No vault switch needed or no current vault')
           }
         } catch (err) {
           console.warn('Could not check current vault key:', err)
         }
 
+        // Pause automatic refresh during vault join operation
+        if (pauseAutoRefresh) pauseAutoRefresh()
+
         setMessage('Joining vault…')
+        console.log('[Vault Join] Starting join process for:', value)
         try {
+          console.log('[Vault Join] Calling pearl.joinVaultLink...')
           await pearl.joinVaultLink(value)
-          await refreshVaultStatus()
-          await refreshNotes()
-          setMessage('Successfully joined vault. Sync restarted.', 'info')
-          setTimeout(() => SwalLib.close(), 1000)
+          console.log('[Vault Join] Join completed, refreshing...')
+
+          // Immediate refresh for better UX, then fire-and-forget background refresh
+          console.log('[Vault Join] Calling refreshVaultStatus...')
+          console.log('[Vault Join] Calling refreshNotes and forceReloadNotes...')
+          const refreshResults = await Promise.allSettled([
+            refreshVaultStatus(),
+            refreshNotes(),
+            forceReloadNotes ? forceReloadNotes() : Promise.resolve()
+          ])
+          console.log('[Vault Join] Refresh results:', refreshResults)
+
+          setMessage('Vault joined! Loading notes...', 'info')
+          console.log('[Vault Join] Setting timeout to close modal')
+          setTimeout(() => {
+            console.log('[Vault Join] Closing modal')
+            SwalLib.close()
+            // Resume automatic refresh after modal closes
+            if (resumeAutoRefresh) resumeAutoRefresh()
+          }, 1500)
         } catch (err) {
           console.error('Failed to join link', err)
           const errorMsg = err.message || 'Failed to join link.'
           setMessage(errorMsg, 'error')
+          // Re-enable the join button after error
+          if (joinBtn) joinBtn.disabled = false
+          // Resume automatic refresh on error
+          if (resumeAutoRefresh) resumeAutoRefresh()
         }
       })
     }

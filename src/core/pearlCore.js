@@ -3,6 +3,7 @@
 // friendly interface exposed on window.Pearl via ui.js.
 
 import { ensureVaultConfig, createLinkString, applyLinkString } from '../pear-end/vault/vaultConfig.js'
+import { ensureDrive } from '../pear-end/vault/hyperdriveClient.js'
 import {
   listNotes as storeListNotes,
   readNote as storeReadNote,
@@ -114,7 +115,19 @@ export async function getCurrentVaultKey () {
  * Apply a pearl-vault:// link from another device and restart sync.
  */
 export async function joinVaultLink (linkString) {
+  console.log('[Vault Join] Starting vault join process...')
+  console.log('[Vault Join] Using main thread with event loop yielding')
+  return joinVaultLinkWithEventLoopYielding(linkString)
+}
+
+async function joinVaultLinkWithEventLoopYielding (linkString) {
   const next = await applyLinkString(linkString)
+  console.log('[Vault Join] Applied link, restarting sync...')
+
+  // Restart sync with new drive - this includes peer discovery
   await syncRestart({ driveKey: next.driveKey })
+  console.log('[Vault Join] Sync restarted successfully')
+
+  return { driveKey: next.driveKey }
 }
 

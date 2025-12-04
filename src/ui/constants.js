@@ -30,6 +30,6 @@ export const FONT_STYLES = ['system', 'serif', 'mono']
 export const THEME_SEQUENCE = ['neon', 'minimal', 'cupertino', 'pink', 'purple']
 
 export const AUTO_SAVE_DELAY_MS = 800
-export const NOTES_AUTO_REFRESH_INTERVAL_MS = 7000
+export const NOTES_AUTO_REFRESH_INTERVAL_MS = 30000
 export const WIKI_MENU_MAX_RESULTS = 8
 

@@ -16,6 +16,8 @@ export function useNotesWorkspace ({ pearl, markdown }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [status, setStatus] = useState({ text: 'Start typing — autosave is on.', tone: 'info' })
   const [previewMode, setPreviewMode] = useState('edit')
+  const [vaultKey, setVaultKey] = useState(null) // Track vault changes
+  const [isSwitchingVault, setIsSwitchingVault] = useState(false) // Pause auto-refresh during vault operations
 
   const autosaveRef = useRef(null)
   const lastSnapshotRef = useRef('')
@@ -59,21 +61,50 @@ export function useNotesWorkspace ({ pearl, markdown }) {
   )
 
   const loadNotes = useCallback(
-    async ({ silent = false } = {}) => {
+    async ({ silent = false, force = false } = {}) => {
+      console.log('[Notes Workspace] loadNotes called, silent:', silent, 'force:', force)
       try {
+        // Check current vault key to detect changes
+        const currentVaultKey = await pearl.getCurrentVaultKey()
+        console.log('[Notes Workspace] Current vault key:', currentVaultKey, 'previous:', vaultKey)
+
+        const vaultChanged = force || currentVaultKey !== vaultKey
+
+        console.log('[Notes Workspace] Calling pearl.listNotes()...')
         const list = await pearl.listNotes()
+        console.log('[Notes Workspace] Got notes list:', list.length, 'notes')
+
+        // Update vault key and clear state when vault changes
+        if (vaultChanged) {
+          console.log('[Notes Workspace] Vault changed, updating key and clearing state')
+          setVaultKey(currentVaultKey)
+          setSelectedNoteId(null)
+          setNoteFields({ title: '', body: '' })
+          setNoteMode(NOTE_MODES.CREATE)
+        }
+
         setNotes(list)
+
         if (selectedNoteId) {
           const stillExists = list.some((note) => note.id === selectedNoteId)
           if (!stillExists) {
             clearEditor({ message: 'Note removed on another device.' })
           }
-        } else if (!silent && list.length === 0) {
-          updateStatus('Start typing — autosave is on.', 'info')
+        } else if (!silent) {
+          if (vaultChanged && list.length === 0) {
+            // New vault appears empty - could be syncing
+            updateStatus('Vault joined! Syncing content from peers...', 'info')
+          } else if (list.length === 0) {
+            updateStatus('Vault is empty. Start typing to create your first note!', 'info')
+          } else {
+            updateStatus(`Loaded ${list.length} note${list.length === 1 ? '' : 's'}.`, 'success')
+          }
         }
       } catch (err) {
         console.error('Failed to load notes', err)
-        if (!silent) updateStatus('Failed to load notes. Please retry once sync is ready.', 'error')
+        if (!silent) {
+          updateStatus('Syncing with vault... Notes will appear once connected to peers.', 'info')
+        }
       }
     },
     [pearl, selectedNoteId, clearEditor, updateStatus]
@@ -239,9 +270,19 @@ export function useNotesWorkspace ({ pearl, markdown }) {
 
   const openNote = useCallback(
     async (id) => {
-      await persistPendingChanges()
+      console.log('[Notes Workspace] openNote called with id:', id, 'typeof id:', typeof id)
       try {
+        await persistPendingChanges()
+        console.log('[Notes Workspace] persistPendingChanges completed')
+      } catch (err) {
+        console.error('[Notes Workspace] persistPendingChanges failed:', err)
+        return
+      }
+
+      try {
+        console.log('[Notes Workspace] Calling pearl.getNote...')
         const note = await pearl.getNote(id)
+        console.log('[Notes Workspace] Got note:', note)
         setSelectedNoteId(note.id)
         setNoteMode(NOTE_MODES.EDIT)
         const fields = { title: note.title || '', body: note.body || '' }
@@ -249,8 +290,9 @@ export function useNotesWorkspace ({ pearl, markdown }) {
         closeWikiPalette()
         lastSnapshotRef.current = snapshotFromFields(fields)
         updateStatus('', 'info')
+        console.log('[Notes Workspace] Note opened successfully')
       } catch (err) {
-        console.error('Failed to open note', err)
+        console.error('[Notes Workspace] Failed to open note:', err.message || err)
         updateStatus('Failed to open note.', 'error')
       }
     },
@@ -316,20 +358,36 @@ export function useNotesWorkspace ({ pearl, markdown }) {
 
   useEffect(() => {
     loadNotes()
-    const interval = setInterval(() => loadNotes({ silent: true }), NOTES_AUTO_REFRESH_INTERVAL_MS)
-    const handleVisibility = () => {
-      if (!document.hidden) loadNotes({ silent: true })
+
+    // Only set up automatic refresh if not currently switching vaults
+    let interval
+    if (!isSwitchingVault) {
+      interval = setInterval(() => loadNotes({ silent: true }), NOTES_AUTO_REFRESH_INTERVAL_MS)
     }
+
+    const handleVisibility = () => {
+      if (!document.hidden && !isSwitchingVault) loadNotes({ silent: true })
+    }
+
     window.addEventListener('visibilitychange', handleVisibility)
     window.addEventListener('focus', handleVisibility)
     window.addEventListener('online', handleVisibility)
+
     return () => {
-      clearInterval(interval)
+      if (interval) clearInterval(interval)
       window.removeEventListener('visibilitychange', handleVisibility)
       window.removeEventListener('focus', handleVisibility)
       window.removeEventListener('online', handleVisibility)
     }
-  }, [loadNotes])
+  }, [loadNotes]) // Remove isSwitchingVault dependency to prevent re-running on vault switches
+
+  // Separate effect for handling vault switching
+  useEffect(() => {
+    if (isSwitchingVault) {
+      // Pause automatic refresh by clearing any existing intervals
+      // The main useEffect will handle re-setup when isSwitchingVault becomes false
+    }
+  }, [isSwitchingVault])
 
   useEffect(() => {
     return () => {
@@ -378,6 +436,26 @@ export function useNotesWorkspace ({ pearl, markdown }) {
     }
   }, [previewMode, closeWikiPalette])
 
+  const forceReloadNotes = useCallback(async () => {
+    console.log('[Notes Workspace] Force reloading notes after vault change')
+    setIsSwitchingVault(true) // Pause automatic refresh during vault operation
+
+    try {
+      // First check if vault actually changed
+      const currentVaultKey = await pearl.getCurrentVaultKey()
+      if (currentVaultKey !== vaultKey) {
+        console.log('[Notes Workspace] Vault did change, forcing reload')
+        await loadNotes({ silent: false, force: true })
+      } else {
+        console.log('[Notes Workspace] Vault key unchanged, normal reload')
+        await loadNotes({ silent: false })
+      }
+    } finally {
+      // Resume automatic refresh after a short delay
+      setTimeout(() => setIsSwitchingVault(false), 2000)
+    }
+  }, [loadNotes, pearl, vaultKey])
+
   return {
     notes,
     noteFields,
@@ -407,7 +485,11 @@ export function useNotesWorkspace ({ pearl, markdown }) {
     toggleSidebar,
     handlePreviewToggle,
     updateStatus,
-    loadNotes
+    loadNotes,
+    forceReloadNotes,
+    isSwitchingVault,
+    pauseAutoRefresh: () => setIsSwitchingVault(true),
+    resumeAutoRefresh: () => setTimeout(() => setIsSwitchingVault(false), 1000)
   }
 }
 

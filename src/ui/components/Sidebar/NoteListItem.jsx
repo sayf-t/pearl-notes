@@ -12,13 +12,18 @@ export default function NoteListItem ({ note, meta, isActive, onSelect }) {
       onSelect()
     }
   }
+
+  const handleClick = () => {
+    onSelect()
+  }
+
   return (
     <li
       className={className}
       role="button"
       tabIndex={0}
       aria-pressed={isActive}
-      onClick={onSelect}
+      onClick={handleClick}
       onKeyDown={handleKeyDown}
     >
       <div className={styles.notesListTitle}>{note.title || '(Untitled)'}</div>
@@ -26,4 +31,5 @@ export default function NoteListItem ({ note, meta, isActive, onSelect }) {
     </li>
   )
 }
+
 

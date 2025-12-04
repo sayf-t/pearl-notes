@@ -13,6 +13,8 @@ let currentDriveKeyHex = null
 let currentDiscoveryKeyHex = null
 let peerCount = 0
 
+const DISCOVERY_FLUSH_TIMEOUT_MS = 5000 // 5 seconds
+
 function resolveStoragePath () {
   if (pearGlobal?.config?.storage) return pearGlobal.config.storage
   if (typeof process !== 'undefined' && process?.env?.PEAR_STORAGE_PATH) {
@@ -62,9 +64,15 @@ async function ensureReplication (store, drive) {
     }
     discovery = swarm.join(drive.discoveryKey, { announce: true, lookup: true })
     if (typeof discovery.flushed === 'function') {
-      await discovery.flushed()
+      await Promise.race([
+        discovery.flushed(),
+        new Promise(resolve => setTimeout(resolve, DISCOVERY_FLUSH_TIMEOUT_MS))
+      ])
     } else if (typeof swarm.flush === 'function') {
-      await swarm.flush()
+      await Promise.race([
+        swarm.flush(),
+        new Promise(resolve => setTimeout(resolve, DISCOVERY_FLUSH_TIMEOUT_MS))
+      ])
     }
     currentDiscoveryKeyHex = nextDiscoveryHex
   }
@@ -86,7 +94,26 @@ export async function ensureDrive ({ keyHex, force = false, replicate = true } =
   }
 
   const drive = await drivePromise
-  if (replicate) await ensureReplication(store, drive)
+  if (replicate) {
+    await ensureReplication(store, drive)
+    // For new drives, indicate we're finding peers and wait for initial discovery
+    if (needsNewDrive) {
+      console.log('[Hyperdrive] New drive created, waiting for peer discovery...')
+      const done = drive.findingPeers()
+      try {
+        // Wait for swarm discovery to complete or timeout
+        await Promise.race([
+          swarm?.flush() || Promise.resolve(),
+          new Promise(resolve => setTimeout(resolve, DISCOVERY_FLUSH_TIMEOUT_MS))
+        ])
+      } catch (err) {
+        console.warn('[Hyperdrive] Peer discovery timeout:', err)
+      } finally {
+        done() // Signal that peer finding is complete
+        console.log('[Hyperdrive] Peer finding complete')
+      }
+    }
+  }
   return { drive, keyHex: currentDriveKeyHex, peerCount }
 }
 
