@@ -13,6 +13,7 @@ Local-first markdown notes with peer-to-peer sync, designed to keep the repo app
 - Theme + font switcher backed by persisted preferences.
 - P2P Hyperdrive/Hyperswarm sync that keeps each device’s writer key private.
 - This repo is configured as a single-writer vault; peers replicate from a single writer rather than adding new writers automatically.
+- Cross-platform compatibility with graceful degradation (window controls hidden on Linux due to Electron/Bare runtime limitations).
 
 ## Setup
 
@@ -30,6 +31,11 @@ Local-first markdown notes with peer-to-peer sync, designed to keep the repo app
    ```
    Use `npm run watch:ui` in another terminal for live esbuild updates while developing the React UI.
 
+## Platform Support
+
+- **macOS & Windows**: Full functionality including window controls (minimize, maximize, close)
+- **Linux**: Full functionality with window controls gracefully hidden due to Pear runtime limitations (Electron/Bare compatibility issues)
+
 ## Tech Stack
 
 - React 18 + Markdown-It for the renderer.
@@ -44,6 +50,7 @@ Local-first markdown notes with peer-to-peer sync, designed to keep the repo app
 ```
 .
 ├─ index.html / ui.js / styles/global.css   # renderer shell
+├─ index.js / run.js                        # main process entry points
 ├─ scripts/
 │  └─ build-ui.mjs                           # esbuild config
 ├─ src/
@@ -72,6 +79,10 @@ Local-first markdown notes with peer-to-peer sync, designed to keep the repo app
 │     │  ├─ StatusBar/
 │     │  │  ├─ StatusBar.jsx
 │     │  │  ├─ StatusBar.module.css
+│     │  │  └─ index.js
+│     │  ├─ WindowControls/
+│     │  │  ├─ WindowControls.jsx              # minimize/maximize/close (platform-aware)
+│     │  │  ├─ WindowControls.module.css
 │     │  │  └─ index.js
 │     │  └─ WikiLinkPaletteDropdown/
 │     │     ├─ WikiLinkPaletteDropdown.jsx
@@ -142,7 +153,7 @@ React UI ──▶ src/core/pearlCore.js ──▶ src/pear-end/api.js
 - **notes/** - Notes management: `notesStore.js` writes `/notes/<id>.md` blobs with YAML frontmatter; `notesSerialization.js` handles parsing/serialization; `notesExportConfig.js` manages export paths; `notesMirror.js` mirrors notes to disk.
 - **sync/** - Sync management: `sync.js` refreshes peer counts and timestamps, bubbling up through `_setSyncStatus` so the UI footer stays current.
 
-For deeper roadmap, research, and acceptance criteria, see [`prd.md`](./prd.md) and [`implementation_plan.md`](./implementation_plan.md).
+For deeper roadmap, research, and acceptance criteria, see [`prd.md`](./prd.md) and [`implementation_plan.md`](./implementation_plan.md). For known issues and troubleshooting, see [`issues.md`](./issues.md).
 
 ## License
 
