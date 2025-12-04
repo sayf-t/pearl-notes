@@ -15,6 +15,6 @@ export async function startVaultSync () {
 }
 
 export async function restartVaultSync ({ driveKey } = {}) {
-  const { peerCount } = await ensureDrive({ keyHex: driveKey, force: Boolean(driveKey), replicate: true })
+  const { peerCount } = await ensureDrive({ keyHex: driveKey, replicate: true })
   touchSyncStatus(true, peerCount)
 }

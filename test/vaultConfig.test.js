@@ -5,7 +5,8 @@ import {
   createLinkString,
   parseLinkString,
   applyLinkString,
-  __setEnsureDriveForTests
+  __setEnsureDriveForTests,
+  __flushDriveSetupQueueForTests
 } from '../src/pear-end/vault/vaultConfig.js'
 
 async function withFakeLocalStorage (fn) {
@@ -75,8 +76,11 @@ test('vaultConfig: applyLinkString validates and calls ensureDrive', async (t) =
       const result = await applyLinkString(link)
       t.alike(result, { driveKey: key })
 
-      t.is(calls.length, 1)
-      t.alike(calls[0], { keyHex: key, force: true })
+      await __flushDriveSetupQueueForTests()
+
+      t.is(calls.length, 2)
+      t.alike(calls[0], { keyHex: key, replicate: false, force: true })
+      t.alike(calls[1], { keyHex: key, replicate: true })
 
       t.is(store.get('pearl-drive-key'), key)
     })

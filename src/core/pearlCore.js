@@ -2,8 +2,8 @@
 // This file composes lower-level vault, sync, and notes modules into a
 // friendly interface exposed on window.Pearl via ui.js.
 
-import { ensureVaultConfig, createLinkString, applyLinkString } from '../pear-end/vault/vaultConfig.js'
-import { ensureDrive } from '../pear-end/vault/hyperdriveClient.js'
+import { ensureVaultConfig, createLinkString, applyLinkString, getPersistedVaultKey } from '../pear-end/vault/vaultConfig.js'
+import { getCurrentDriveKey } from '../pear-end/vault/hyperdriveClient.js'
 import {
   listNotes as storeListNotes,
   readNote as storeReadNote,
@@ -15,6 +15,22 @@ import { startVaultSync as syncStart, restartVaultSync as syncRestart } from '..
 import { vaultGetStatus, _setSyncStatus } from '../pear-end/api.js'
 
 let coreInitialized = false
+
+// Event system for vault operations
+const vaultEventTarget = new EventTarget()
+
+export function addVaultEventListener (eventType, listener) {
+  vaultEventTarget.addEventListener(eventType, listener)
+}
+
+export function removeVaultEventListener (eventType, listener) {
+  vaultEventTarget.removeEventListener(eventType, listener)
+}
+
+function emitVaultEvent (eventType, detail = {}) {
+  const event = new CustomEvent(eventType, { detail })
+  vaultEventTarget.dispatchEvent(event)
+}
 
 function handleSyncError (err) {
   if (err && err.code === 'ELOCKED') {
@@ -107,27 +123,75 @@ export async function createVaultLink () {
  * Get the current vault drive key, if one exists.
  */
 export async function getCurrentVaultKey () {
+  const liveKey = getCurrentDriveKey()
+  if (liveKey) return liveKey
+
+  const storedKey = getPersistedVaultKey()
+  if (storedKey) return storedKey
+
   const cfg = await ensureVaultConfig()
   return cfg.driveKey || null
 }
 
 /**
  * Apply a pearl-vault:// link from another device and restart sync.
+ * This is now fire-and-forget; UI should listen for 'vault:joined' events.
  */
 export async function joinVaultLink (linkString) {
   console.log('[Vault Join] Starting vault join process...')
-  console.log('[Vault Join] Using main thread with event loop yielding')
-  return joinVaultLinkWithEventLoopYielding(linkString)
+
+  // Validate link synchronously before starting async operation
+  const { parseLinkString } = await import('../pear-end/vault/vaultConfig.js')
+  const result = parseLinkString(linkString)
+  if (result.error) {
+    throw new Error(result.error)
+  }
+
+  joinVaultLinkAsync(linkString).catch(err => {
+    console.error('[Vault Join] Async join failed:', err)
+    emitVaultEvent('vault:join-error', { error: err })
+  })
+
+  // Return immediately - completion signaled via events
+  return { status: 'initiated' }
 }
 
-async function joinVaultLinkWithEventLoopYielding (linkString) {
-  const next = await applyLinkString(linkString)
-  console.log('[Vault Join] Applied link, restarting sync...')
+async function joinVaultLinkAsync (linkString) {
+  let previousKey = null
+  try {
+    // Capture the previous key before any changes
+    previousKey = await getCurrentVaultKey()
 
-  // Restart sync with new drive - this includes peer discovery
-  await syncRestart({ driveKey: next.driveKey })
-  console.log('[Vault Join] Sync restarted successfully')
+    console.log('[Vault Join] Applying link configuration...')
+    const next = await applyLinkString(linkString)
+    console.log('[Vault Join] Vault switched successfully')
 
-  return { driveKey: next.driveKey }
+    // Vault switch is complete - applyLinkString handles drive creation and replication
+    // Emit success immediately - content loading happens via automatic refresh
+    emitVaultEvent('vault:joined', {
+      driveKey: next.driveKey,
+      previousKey: previousKey
+    })
+
+  } catch (err) {
+    console.error('[Vault Join] Join process failed:', err)
+
+    // Emit error event - vault switch failed
+    emitVaultEvent('vault:join-error', {
+      error: err,
+      previousKey: previousKey
+    })
+    throw err
+  }
+}
+
+async function getPreviousVaultKey () {
+  try {
+    // Get the previous key from localStorage before it gets overwritten
+    const raw = globalThis?.localStorage?.getItem('pearl-drive-key')
+    return raw || null
+  } catch {
+    return null
+  }
 }
 

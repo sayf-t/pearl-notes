@@ -191,6 +191,7 @@ export function openVaultShareModal ({ pearl, notify, refreshVaultStatus, refres
 
             if (!userConfirmed) {
               setMessage('Vault switch cancelled.', 'info')
+              if (joinBtn) joinBtn.disabled = false
               return
             }
           } else {
@@ -205,32 +206,82 @@ export function openVaultShareModal ({ pearl, notify, refreshVaultStatus, refres
 
         setMessage('Joining vault…')
         console.log('[Vault Join] Starting join process for:', value)
-        try {
-          console.log('[Vault Join] Calling pearl.joinVaultLink...')
-          await pearl.joinVaultLink(value)
-          console.log('[Vault Join] Join completed, refreshing...')
 
-          // Immediate refresh for better UX, then fire-and-forget background refresh
-          console.log('[Vault Join] Calling refreshVaultStatus...')
-          console.log('[Vault Join] Calling refreshNotes and forceReloadNotes...')
-          const refreshResults = await Promise.allSettled([
-            refreshVaultStatus(),
-            refreshNotes(),
-            forceReloadNotes ? forceReloadNotes() : Promise.resolve()
-          ])
-          console.log('[Vault Join] Refresh results:', refreshResults)
+        // Set up event listeners for join completion
+        let joinCompleted = false
+        let joinError = false
 
-          setMessage('Vault joined! Loading notes...', 'info')
-          console.log('[Vault Join] Setting timeout to close modal')
+        const handleJoinSuccess = (event) => {
+          console.log('[Vault Join] Join completed via event:', event.detail)
+          joinCompleted = true
+          cleanup()
+
+          // Vault join successful - trigger immediate refresh and close modal
+          setMessage('Vault joined! Syncing content from peers...', 'info')
+          console.log('[Vault Join] Triggering immediate refresh and closing modal')
+
+          // Trigger immediate force reload to update UI with new vault
+          console.log('[Vault Join] Calling forceReloadNotes...')
+          if (forceReloadNotes) {
+            forceReloadNotes().catch(err => console.error('[Vault Join] Force reload failed:', err))
+          } else {
+            console.warn('[Vault Join] forceReloadNotes not available')
+          }
+
+          // Close modal immediately
           setTimeout(() => {
             console.log('[Vault Join] Closing modal')
             SwalLib.close()
             // Resume automatic refresh after modal closes
             if (resumeAutoRefresh) resumeAutoRefresh()
-          }, 1500)
+          }, 1000)
+        }
+
+        const handleJoinError = (event) => {
+          console.error('[Vault Join] Join failed via event:', event.detail)
+          joinError = true
+          cleanup()
+
+          const error = event.detail.error
+          const errorMsg = error?.message || 'Failed to join vault link.'
+          setMessage(errorMsg, 'error')
+
+          // Re-enable the join button after error
+          if (joinBtn) joinBtn.disabled = false
+          // Resume automatic refresh on error
+          if (resumeAutoRefresh) resumeAutoRefresh()
+        }
+
+        const cleanup = () => {
+          pearl.removeVaultEventListener('vault:joined', handleJoinSuccess)
+          pearl.removeVaultEventListener('vault:join-error', handleJoinError)
+        }
+
+        // Listen for vault join events
+        pearl.addVaultEventListener('vault:joined', handleJoinSuccess)
+        pearl.addVaultEventListener('vault:join-error', handleJoinError)
+
+        // Start the join process (fire-and-forget)
+        try {
+          console.log('[Vault Join] Initiating join process...')
+          await pearl.joinVaultLink(value)
+          console.log('[Vault Join] Join initiated, waiting for events...')
+
+          // Set a timeout in case events don't fire (slightly longer than backend timeout)
+          setTimeout(() => {
+            if (!joinCompleted && !joinError) {
+              console.warn('[Vault Join] Timeout waiting for join completion events')
+              cleanup()
+              setMessage('Join operation timed out. Please try again.', 'error')
+              if (joinBtn) joinBtn.disabled = false
+              if (resumeAutoRefresh) resumeAutoRefresh()
+            }
+          }, 12000) // 12 second timeout (slightly longer than backend's 10s)
+
         } catch (err) {
-          console.error('Failed to join link', err)
-          const errorMsg = err.message || 'Failed to join link.'
+          console.error('[Vault Join] Failed to initiate join:', err)
+          cleanup()
+          const errorMsg = err.message || 'Failed to start vault join.'
           setMessage(errorMsg, 'error')
           // Re-enable the join button after error
           if (joinBtn) joinBtn.disabled = false

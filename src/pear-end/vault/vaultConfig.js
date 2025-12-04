@@ -1,16 +1,16 @@
-import { ensureDrive as realEnsureDrive } from './hyperdriveClient.js'
+import {
+  ensureDrive,
+  forceSwitchDrive,
+  replicateDrive,
+  __setEnsureDriveForTests as __setEnsureDriveForTestsInternal,
+  __flushDriveQueuesForTests as __flushDriveQueuesForTestsInternal
+} from './driveManager.js'
 
 const STORAGE_KEY = 'pearl-drive-key'
 const DRIVE_KEY_PATTERN = /^[0-9a-fA-F]{64}$/
 
-// Allow tests to inject a fake ensureDrive implementation without
-// affecting production behavior. In normal usage this remains the
-// real hyperdrive-backed implementation.
-let ensureDriveImpl = realEnsureDrive
-
-export function __setEnsureDriveForTests (fn) {
-  ensureDriveImpl = typeof fn === 'function' ? fn : realEnsureDrive
-}
+export const __setEnsureDriveForTests = __setEnsureDriveForTestsInternal
+export const __flushDriveSetupQueueForTests = __flushDriveQueuesForTestsInternal
 
 function normalizeLink (linkString) {
   return linkString?.trim?.() ?? ''
@@ -44,9 +44,13 @@ function persistDriveKey (keyHex) {
   } catch {}
 }
 
+export function getPersistedVaultKey () {
+  return readStoredDriveKey()
+}
+
 export async function ensureVaultConfig () {
   const storedKey = readStoredDriveKey()
-  const { keyHex } = await ensureDriveImpl({ keyHex: storedKey || undefined })
+  const { keyHex } = await ensureDrive({ keyHex: storedKey || undefined })
   if (keyHex && keyHex !== storedKey) persistDriveKey(keyHex)
   return { driveKey: keyHex }
 }
@@ -98,7 +102,11 @@ export async function applyLinkString (linkString) {
   if (!result.driveKey) {
     throw new Error('Invalid vault link: unable to parse drive key')
   }
-  await ensureDriveImpl({ keyHex: result.driveKey, force: true })
+
   persistDriveKey(result.driveKey)
+
+  await forceSwitchDrive(result.driveKey)
+  replicateDrive(result.driveKey)
+
   return { driveKey: result.driveKey }
 }

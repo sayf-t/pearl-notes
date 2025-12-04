@@ -113,6 +113,19 @@ export async function ensureDrive ({ keyHex, force = false, replicate = true } =
         console.log('[Hyperdrive] Peer finding complete')
       }
     }
+
+    // Ensure drive is fully synchronized after replication setup
+    console.log('[Hyperdrive] Ensuring drive is synchronized...')
+    try {
+      await Promise.race([
+        drive.update({ wait: true }),
+        new Promise(resolve => setTimeout(resolve, 10000)) // 10 second timeout
+      ])
+      console.log('[Hyperdrive] Drive synchronization complete')
+    } catch (err) {
+      console.warn('[Hyperdrive] Drive synchronization timeout or error:', err)
+      // Continue anyway - drive might still work
+    }
   }
   return { drive, keyHex: currentDriveKeyHex, peerCount }
 }
