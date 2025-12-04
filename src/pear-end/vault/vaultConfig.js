@@ -16,23 +16,11 @@ function normalizeLink (linkString) {
   return linkString?.trim?.() ?? ''
 }
 
-// Storage abstraction - implemented by UI layer to avoid Node.js/browser mixing
-let storageImpl = {
-  get: () => null,
-  set: () => {}
-}
-
-export function setVaultStorageImplementation (impl) {
-  if (typeof impl?.get === 'function' && typeof impl?.set === 'function') {
-    storageImpl = impl
-  }
-}
-
 // Backwards-compatible reader: accepts either a plain hex key or the
 // JSON shape we briefly used during the multi-writer experiment.
 function readStoredDriveKey () {
   try {
-    const raw = storageImpl.get(STORAGE_KEY)
+    const raw = globalThis?.localStorage?.getItem(STORAGE_KEY)
     if (!raw) return null
     // Legacy format: plain 64-char hex key.
     if (DRIVE_KEY_PATTERN.test(raw)) return raw.toLowerCase()
@@ -52,7 +40,7 @@ function readStoredDriveKey () {
 function persistDriveKey (keyHex) {
   if (!keyHex) return
   try {
-    storageImpl.set(STORAGE_KEY, keyHex.toLowerCase())
+    globalThis?.localStorage?.setItem(STORAGE_KEY, keyHex.toLowerCase())
   } catch {}
 }
 

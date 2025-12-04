@@ -61,4 +61,3 @@ if (platform === 'linux') {
     Pear.exit()
   })
 }
-
