@@ -8,7 +8,23 @@ const uiLog = (message, level = 'info') => {
   console[method](formatted)
 }
 
-await PearlCore.initializeCore()
+// Provide browser-compatible storage implementation for vault persistence
+const browserStorage = {
+  get: (key) => {
+    try {
+      return window.localStorage?.getItem(key) ?? null
+    } catch {
+      return null
+    }
+  },
+  set: (key, value) => {
+    try {
+      window.localStorage?.setItem(key, value)
+    } catch {}
+  }
+}
+
+await PearlCore.initializeCore({ storage: browserStorage })
 window.Pearl = PearlCore
 
 renderPearlApp({

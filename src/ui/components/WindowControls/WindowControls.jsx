@@ -1,15 +1,41 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Minus, Maximize2, X } from 'lucide-react'
 import styles from './WindowControls.module.css'
-import ui from 'pear-electron'
 
 /**
  * Window control buttons for minimize, maximize/fullscreen, and close.
+ * Only renders on platforms where pear-electron is compatible (not Linux).
  */
 export default function WindowControls () {
   const [isMaximized, setIsMaximized] = useState(false)
+  const [ui, setUi] = useState(null)
+  const [isSupported, setIsSupported] = useState(false)
 
-  if (!ui?.app) {
+  useEffect(() => {
+    // Platform detection - temporarily disable on Linux due to Bare/Electron compatibility issues
+    const platform = typeof window !== 'undefined' && window.process?.platform
+      ? window.process.platform
+      : (typeof process !== 'undefined' ? process.platform : 'unknown')
+
+    // According to Pear docs, Bare modules are incompatible with Electron on Linux
+    if (platform === 'linux') {
+      setIsSupported(false)
+      return
+    }
+
+    // Dynamic import to avoid build-time issues
+    import('pear-electron')
+      .then((uiModule) => {
+        setUi(uiModule.default || uiModule)
+        setIsSupported(true)
+      })
+      .catch((error) => {
+        console.warn('pear-electron not available:', error.message)
+        setIsSupported(false)
+      })
+  }, [])
+
+  if (!isSupported || !ui?.app) {
     return null
   }
 

@@ -2,7 +2,7 @@
 // This file composes lower-level vault, sync, and notes modules into a
 // friendly interface exposed on window.Pearl via ui.js.
 
-import { ensureVaultConfig, createLinkString, applyLinkString } from '../pear-end/vault/vaultConfig.js'
+import { ensureVaultConfig, createLinkString, applyLinkString, setVaultStorageImplementation } from '../pear-end/vault/vaultConfig.js'
 import {
   listNotes as storeListNotes,
   readNote as storeReadNote,
@@ -27,9 +27,17 @@ function handleSyncError (err) {
 /**
  * Ensure the vault is configured and start background sync.
  * Safe to call multiple times; only the first call does work.
+ * @param {object} options - Initialization options
+ * @param {object} options.storage - Storage implementation with get/set methods
  */
-export async function initializeCore () {
+export async function initializeCore (options = {}) {
   if (coreInitialized) return
+
+  // Set up storage implementation for vault persistence
+  if (options.storage) {
+    setVaultStorageImplementation(options.storage)
+  }
+
   await ensureVaultConfig()
   try {
     await syncStart()
