@@ -28,7 +28,11 @@ export default function WindowControls () {
   }
 
   const handleClose = () => {
-    ui.app.close?.() || window.Pear?.exit?.()
+    if (ui.app.close) {
+      ui.app.close()
+    } else {
+      window.Pear?.exit?.()
+    }
   }
 
   return (
