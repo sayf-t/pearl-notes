@@ -13,6 +13,7 @@ export default function StatusBar ({
   fontStyle = 'system',
   onFontChange,
   exportDir,
+  onVaultManagerOpen,
   onSidebarToggle,
   isSidebarOpen,
   showSidebarToggle = false,
@@ -66,9 +67,19 @@ export default function StatusBar ({
           {status.text}
         </span>
         {exportDir ? (
-          <span className={styles.exportDir} title={exportDir}>
-            MD export: {exportDir}
-          </span>
+          <button
+            type="button"
+            className={styles.vaultChip}
+            onClick={onVaultManagerOpen}
+            disabled={!onVaultManagerOpen}
+            aria-label={`Open vault manager. Local export: ${exportDir}`}
+            title={`Local markdown export folder: ${exportDir}`}
+          >
+            <span className={styles.vaultChipLabel}>Vault · Local export</span>
+            <span className={styles.vaultChipPath} aria-hidden="true">
+              {exportDir}
+            </span>
+          </button>
         ) : null}
       </div>
       {shouldShowControls ? (

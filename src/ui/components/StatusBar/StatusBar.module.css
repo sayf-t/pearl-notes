@@ -37,9 +37,46 @@
   color: var(--muted);
 }
 
-.exportDir {
+.vaultChip {
+  margin: 4px 0;
+  padding: 6px 12px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: var(--button-secondary-bg);
+  color: var(--text);
+  font-size: 0.7rem;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
+}
+
+.vaultChip:hover:not(:disabled),
+.vaultChip:focus-visible {
+  border-color: var(--border-strong);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--border-strong) 25%, transparent);
+}
+
+.vaultChip:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.vaultChipLabel {
+  font-weight: 600;
   font-size: 0.7rem;
   color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.vaultChipPath {
+  max-width: 360px;
+  font-size: 0.75rem;
+  color: var(--text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

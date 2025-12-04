@@ -293,6 +293,171 @@ export function openVaultShareModal ({ pearl, notify, refreshVaultStatus, refres
   })
 }
 
+export function openVaultManagerModal ({ pearl, notify, refreshVaultStatus, refreshNotes, exportDir }) {
+  const SwalLib = getSwal()
+  if (!SwalLib) {
+    notify?.('SweetAlert unavailable — cannot open vault manager.', 'error')
+    return
+  }
+
+  SwalLib.fire({
+    title: 'Vault manager',
+    html: renderVaultManagerModalHtml(),
+    width: 540,
+    customClass: { popup: 'pearl-swal' },
+    showConfirmButton: false,
+    focusConfirm: false,
+    didOpen: async (popup) => {
+      const messageEl = popup.querySelector('[data-field="vault-manager-message"]')
+      const currentKeyEl = popup.querySelector('[data-field="vault-manager-current-key"]')
+      const exportPathEl = popup.querySelector('[data-field="vault-manager-export-path"]')
+      const recentsListEl = popup.querySelector('[data-field="vault-manager-recent-list"]')
+      const copyKeyBtn = popup.querySelector('[data-action="vault-manager-copy-key"]')
+      const copyPathBtn = popup.querySelector('[data-action="vault-manager-copy-path"]')
+      const shareBtn = popup.querySelector('[data-action="vault-manager-share"]')
+      const refreshBtn = popup.querySelector('[data-action="vault-manager-refresh"]')
+
+      let currentKey = null
+
+      const setMessage = (msg, tone = 'muted') => {
+        if (!messageEl) return
+        messageEl.textContent = msg
+        messageEl.style.color =
+          tone === 'error' ? 'var(--danger)' : tone === 'success' ? '#7be4a2' : 'var(--muted)'
+      }
+
+      const handleVaultSwitch = async (driveKey, label) => {
+        if (!driveKey) return
+        if (currentKey && driveKey === currentKey) {
+          setMessage('Already viewing that vault.', 'muted')
+          return
+        }
+
+        const confirmed = window.confirm(
+          `Switch to vault ${label || driveKey.slice(0, 12) + '…'}?\n\n` +
+            'Your notes stay on disk — you are simply viewing a different vault.'
+        )
+        if (!confirmed) {
+          setMessage('Vault switch cancelled.', 'muted')
+          return
+        }
+
+        setMessage('Switching vault…')
+        try {
+          await pearl.setCurrentVault?.(driveKey)
+          await refreshVaultStatus?.()
+          await refreshNotes?.()
+          setMessage('Vault switched. Refreshing workspace…', 'success')
+          setTimeout(() => SwalLib.close(), 800)
+        } catch (err) {
+          console.error('Failed to switch vault:', err)
+          notify?.(err.message || 'Failed to switch vault.', 'error')
+          setMessage(err.message || 'Failed to switch vault.', 'error')
+        }
+      }
+
+      const renderRecentList = (recents = []) => {
+        if (!recentsListEl) return
+        recentsListEl.innerHTML = ''
+        if (!recents.length) {
+          const emptyItem = document.createElement('li')
+          emptyItem.className = 'vault-manager-empty'
+          emptyItem.textContent = 'No other vaults yet.'
+          recentsListEl.appendChild(emptyItem)
+          return
+        }
+
+        recents.forEach((vault) => {
+          if (!vault?.driveKey) return
+          const item = document.createElement('li')
+          item.className = 'vault-manager-recent-item'
+          const button = document.createElement('button')
+          button.type = 'button'
+          button.className = 'vault-manager-recent-btn'
+          button.dataset.driveKey = vault.driveKey
+          button.disabled = Boolean(currentKey && vault.driveKey === currentKey)
+
+          const label = document.createElement('span')
+          label.className = 'vault-manager-recent-label'
+          const buttonLabel = vault.label || `Vault ${vault.driveKey.slice(0, 12)}…`
+          label.textContent = buttonLabel
+
+          const keyPreview = document.createElement('span')
+          keyPreview.className = 'vault-manager-recent-key'
+          keyPreview.textContent = vault.driveKey.slice(0, 20) + '…'
+
+          button.setAttribute('aria-label', `Switch to ${buttonLabel}`)
+          button.title = `Switch to ${buttonLabel}`
+
+          button.appendChild(label)
+          button.appendChild(keyPreview)
+          button.addEventListener('click', () => handleVaultSwitch(vault.driveKey, vault.label))
+
+          item.appendChild(button)
+          recentsListEl.appendChild(item)
+        })
+      }
+
+      const loadState = async () => {
+        setMessage('Loading vault details…')
+        try {
+          const [status, recents] = await Promise.all([
+            pearl.getVaultStatus?.(),
+            Promise.resolve(pearl.getRecentVaults?.())
+          ])
+
+          currentKey = status?.driveKey || null
+          if (currentKeyEl) {
+            currentKeyEl.textContent = currentKey ? `${currentKey.slice(0, 12)}…` : 'Unavailable'
+          }
+
+          const latestExportDir = exportDir || status?.exportDir || 'Not set'
+          if (exportPathEl) {
+            exportPathEl.textContent = latestExportDir
+          }
+
+          renderRecentList(Array.isArray(recents) ? recents : [])
+
+          setMessage('You can copy details, share, or switch vaults.', 'success')
+        } catch (err) {
+          console.error('Failed to load vault manager state:', err)
+          setMessage('Unable to load vault details. Try again.', 'error')
+        }
+      }
+
+      copyKeyBtn?.addEventListener('click', async () => {
+        if (!currentKey) {
+          setMessage('Vault key not available yet.', 'error')
+          return
+        }
+        const success = await copyTextToClipboard(currentKey)
+        setMessage(success ? 'Vault key copied.' : 'Clipboard unavailable.', success ? 'success' : 'error')
+      })
+
+      copyPathBtn?.addEventListener('click', async () => {
+        const value = exportPathEl?.textContent?.trim()
+        if (!value) {
+          setMessage('Export path unavailable.', 'error')
+          return
+        }
+        const success = await copyTextToClipboard(value)
+        setMessage(success ? 'Export path copied.' : 'Clipboard unavailable.', success ? 'success' : 'error')
+      })
+
+      shareBtn?.addEventListener('click', () => {
+        SwalLib.close()
+        setTimeout(() => {
+          openVaultShareModal({ pearl, notify, refreshVaultStatus, refreshNotes })
+        }, 150)
+      })
+
+      refreshBtn?.addEventListener('click', loadState)
+
+      await loadState()
+    }
+  })
+}
+
 function renderVaultShareModalHtml (currentVaultKey) {
   return `
     <div class="vault-share-modal">
@@ -325,6 +490,135 @@ function renderVaultShareModalHtml (currentVaultKey) {
         </div>
       </div>
       <p class="modal-hint" data-field="share-message"></p>
+    </div>
+  `
+}
+
+function renderVaultManagerModalHtml () {
+  return `
+    <style>
+      .vault-manager {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .vault-manager-section {
+        padding: 12px;
+        border: 1px solid var(--border-subtle);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.02);
+      }
+      .vault-manager-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 6px;
+        color: var(--muted);
+      }
+      .vault-manager-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .vault-manager-row code,
+      .vault-manager-row span {
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 0.85rem;
+      }
+      .vault-manager-recents {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 220px;
+        overflow-y: auto;
+      }
+      .vault-manager-recent-btn {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--border-subtle);
+        background: rgba(255, 255, 255, 0.02);
+        color: var(--text);
+        cursor: pointer;
+        transition: border-color 120ms ease, background 120ms ease;
+      }
+      .vault-manager-recent-btn:hover:not(:disabled),
+      .vault-manager-recent-btn:focus-visible {
+        border-color: var(--border-strong);
+        background: rgba(255, 255, 255, 0.05);
+        outline: none;
+      }
+      .vault-manager-recent-btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+      .vault-manager-recent-label {
+        font-weight: 600;
+        font-size: 0.85rem;
+      }
+      .vault-manager-recent-key {
+        font-size: 0.75rem;
+        color: var(--muted);
+        margin-left: 12px;
+      }
+      .vault-manager-empty {
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+      .vault-manager-actions {
+        display: flex;
+        justify-content: flex-end;
+      }
+      .vault-manager-message {
+        font-size: 0.8rem;
+        margin: 0;
+        color: var(--muted);
+      }
+      .vault-manager-recents-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+      }
+    </style>
+    <div class="vault-manager">
+      <div class="vault-manager-section">
+        <p class="vault-manager-label">Active vault</p>
+        <div class="vault-manager-row">
+          <code data-field="vault-manager-current-key">Loading…</code>
+          <button class="btn btn-small" data-action="vault-manager-copy-key">Copy key</button>
+        </div>
+      </div>
+      <div class="vault-manager-section">
+        <p class="vault-manager-label">Local export folder</p>
+        <div class="vault-manager-row">
+          <span data-field="vault-manager-export-path">Checking…</span>
+          <button class="btn btn-small" data-action="vault-manager-copy-path">Copy path</button>
+        </div>
+      </div>
+      <div class="vault-manager-section">
+        <div class="vault-manager-recents-header">
+          <p class="vault-manager-label">Recent vaults</p>
+          <button class="btn btn-small" data-action="vault-manager-refresh">Refresh</button>
+        </div>
+        <ul class="vault-manager-recents" data-field="vault-manager-recent-list" aria-label="Recent vaults"></ul>
+      </div>
+      <div class="vault-manager-section vault-manager-actions">
+        <button class="btn btn-primary" data-action="vault-manager-share">Share or join via link</button>
+      </div>
+      <p class="vault-manager-message" data-field="vault-manager-message" role="status" aria-live="polite">
+        Loading vault details…
+      </p>
     </div>
   `
 }

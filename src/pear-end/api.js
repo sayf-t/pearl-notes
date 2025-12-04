@@ -1,7 +1,7 @@
 // Thin API layer that exposes vault-related helpers to the core/UI.
 // This is intentionally small; most logic lives in vaultConfig and sync/.
 
-import { ensureVaultConfig, createLinkString, applyLinkString } from './vault/vaultConfig.js'
+import { ensureVaultConfig, createLinkString, applyLinkString, getRecentVaults } from './vault/vaultConfig.js'
 import { restartVaultSync } from './sync/sync.js'
 import { ensureDrive } from './vault/hyperdriveClient.js'
 import { getNotesFilesPath } from './notes/notesExportConfig.js'
@@ -46,6 +46,14 @@ export async function vaultJoinLink ({ linkString }) {
     return { success: true }
   } catch (err) {
     return { success: false, error: err.message || String(err) }
+  }
+}
+
+export async function vaultGetRecentList () {
+  const cfg = await ensureVaultConfig()
+  return {
+    currentKey: cfg.driveKey || null,
+    recentVaults: getRecentVaults()
   }
 }
 

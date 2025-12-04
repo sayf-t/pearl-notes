@@ -9,6 +9,7 @@ import { useMediaQuery } from './hooks/useMediaQuery'
 import { useThemeState } from './hooks/useThemeState'
 import { useVaultStatus } from './hooks/useVaultStatus'
 import { openThemePicker } from './utils/themePicker.js'
+import { openVaultManagerModal } from './utils/vault.js'
 import { openNotesModal } from './utils/openNotesModal.js'
 import styles from './App.module.css'
 
@@ -90,7 +91,14 @@ export default function App ({ pearl, themeManager, markdown, uiLog }) {
     adjustTitleHeight()
   }, [noteFields.title, adjustTitleHeight])
 
-  const { vaultStatus, syncStatusText, exportDir, handleCopyVaultKey, handleVaultShare } = useVaultStatus({
+  const {
+    vaultStatus,
+    syncStatusText,
+    exportDir,
+    handleCopyVaultKey,
+    handleVaultShare,
+    refreshVaultStatus
+  } = useVaultStatus({
     pearl,
     notify: updateStatus,
     uiLog,
@@ -213,6 +221,16 @@ export default function App ({ pearl, themeManager, markdown, uiLog }) {
   const modalViewport = getShouldUseModal()
   const statusBarSidebarOpen = modalViewport ? isSidebarModalOpen : !sidebarCollapsed
 
+  const handleVaultManagerOpen = useCallback(() => {
+    openVaultManagerModal({
+      pearl,
+      notify: updateStatus,
+      refreshVaultStatus,
+      refreshNotes: () => loadNotes({ silent: true }),
+      exportDir
+    })
+  }, [pearl, updateStatus, refreshVaultStatus, loadNotes, exportDir])
+
   return (
     <div className={styles.app}>
       <WindowControls />
@@ -312,6 +330,7 @@ export default function App ({ pearl, themeManager, markdown, uiLog }) {
           fontStyle={themeState.fontStyle}
           onFontChange={handleFontChange}
           exportDir={exportDir}
+          onVaultManagerOpen={handleVaultManagerOpen}
           onSidebarToggle={handleSidebarToggleRequest}
           isSidebarOpen={statusBarSidebarOpen}
           showSidebarToggle

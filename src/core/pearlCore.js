@@ -2,7 +2,14 @@
 // This file composes lower-level vault, sync, and notes modules into a
 // friendly interface exposed on window.Pearl via ui.js.
 
-import { ensureVaultConfig, createLinkString, applyLinkString, getPersistedVaultKey } from '../pear-end/vault/vaultConfig.js'
+import {
+  ensureVaultConfig,
+  createLinkString,
+  applyLinkString,
+  getPersistedVaultKey,
+  getRecentVaults as readRecentVaults,
+  addRecentVault
+} from '../pear-end/vault/vaultConfig.js'
 import { getCurrentDriveKey } from '../pear-end/vault/hyperdriveClient.js'
 import {
   listNotes as storeListNotes,
@@ -59,9 +66,9 @@ export async function initializeCore () {
 /**
  * Force a full restart of the sync subsystem.
  */
-export async function restartVaultSync () {
+export async function restartVaultSync (options) {
   try {
-    await syncRestart()
+    await syncRestart(options)
   } catch (err) {
     handleSyncError(err)
   }
@@ -133,6 +140,33 @@ export async function getCurrentVaultKey () {
   return cfg.driveKey || null
 }
 
+export function getRecentVaults () {
+  return readRecentVaults()
+}
+
+export async function setCurrentVault (driveKey, { label } = {}) {
+  if (!driveKey) {
+    throw new Error('Drive key is required to switch vaults.')
+  }
+
+  const normalizedKey = driveKey.toLowerCase()
+  const previousKey = await getCurrentVaultKey()
+  const alreadyActive = previousKey && previousKey.toLowerCase() === normalizedKey
+
+  addRecentVault({ driveKey: normalizedKey, label })
+
+  if (alreadyActive) {
+    return { driveKey: normalizedKey, changed: false }
+  }
+
+  const link = createLinkString({ driveKey: normalizedKey })
+  await applyLinkString(link)
+  await restartVaultSync({ driveKey: normalizedKey })
+
+  emitVaultEvent('vault:switched', { driveKey: normalizedKey, previousKey })
+  return { driveKey: normalizedKey, changed: true }
+}
+
 /**
  * Apply a pearl-vault:// link from another device and restart sync.
  * This is now fire-and-forget; UI should listen for 'vault:joined' events.
@@ -165,6 +199,8 @@ async function joinVaultLinkAsync (linkString) {
     console.log('[Vault Join] Applying link configuration...')
     const next = await applyLinkString(linkString)
     console.log('[Vault Join] Vault switched successfully')
+
+    addRecentVault({ driveKey: next.driveKey })
 
     // Vault switch is complete - applyLinkString handles drive creation and replication
     // Emit success immediately - content loading happens via automatic refresh

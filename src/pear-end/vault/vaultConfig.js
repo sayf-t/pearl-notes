@@ -7,6 +7,8 @@ import {
 } from './driveManager.js'
 
 const STORAGE_KEY = 'pearl-drive-key'
+const RECENT_VAULTS_KEY = 'pearl-recent-vaults'
+const RECENT_VAULT_LIMIT = 8
 const DRIVE_KEY_PATTERN = /^[0-9a-fA-F]{64}$/
 
 export const __setEnsureDriveForTests = __setEnsureDriveForTestsInternal
@@ -44,8 +46,46 @@ function persistDriveKey (keyHex) {
   } catch {}
 }
 
+function readRecentVaults () {
+  try {
+    const raw = globalThis?.localStorage?.getItem(RECENT_VAULTS_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+    return parsed
+      .filter((entry) => entry && typeof entry.driveKey === 'string' && DRIVE_KEY_PATTERN.test(entry.driveKey))
+      .map((entry) => ({
+        driveKey: entry.driveKey.toLowerCase(),
+        label: typeof entry.label === 'string' && entry.label.trim() ? entry.label.trim() : null
+      }))
+  } catch {
+    return []
+  }
+}
+
+function persistRecentVaults (vaults) {
+  try {
+    globalThis?.localStorage?.setItem(RECENT_VAULTS_KEY, JSON.stringify(vaults.slice(0, RECENT_VAULT_LIMIT)))
+  } catch {}
+}
+
 export function getPersistedVaultKey () {
   return readStoredDriveKey()
+}
+
+export function getRecentVaults () {
+  return readRecentVaults()
+}
+
+export function addRecentVault ({ driveKey, label } = {}) {
+  if (!driveKey || !DRIVE_KEY_PATTERN.test(driveKey)) return getRecentVaults()
+  const normalizedKey = driveKey.toLowerCase()
+  const normalizedLabel = typeof label === 'string' && label.trim() ? label.trim() : null
+
+  const existing = readRecentVaults().filter((entry) => entry.driveKey !== normalizedKey)
+  const nextList = [{ driveKey: normalizedKey, label: normalizedLabel }, ...existing]
+  persistRecentVaults(nextList)
+  return nextList.slice(0, RECENT_VAULT_LIMIT)
 }
 
 export async function ensureVaultConfig () {
