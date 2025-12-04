@@ -24,6 +24,7 @@ const commonConfig = {
   alias: {
     'sodium-native': 'sodium-javascript'  // Use JS fallback instead of native
   },
+  external: ['pear-electron'],  // pear-electron is available at runtime in Electron renderer
   plugins: [
     cssModulesPlugin({
       // keep class names readable for easier debugging

@@ -1,0 +1,51 @@
+.windowControls {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  gap: 6px;
+  z-index: 10000;
+}
+
+.windowControlBtn {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--icon-btn-bg);
+  color: var(--icon-btn-color);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.15s, color 0.15s, border-color 0.15s;
+  box-shadow: 0 4px 12px var(--border-subtle);
+}
+
+.windowControlBtn:hover {
+  transform: translateY(-1px);
+  color: var(--accent);
+  background: var(--button-bg);
+}
+
+.closeBtn:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.windowControlBtn:active {
+  transform: translateY(0);
+}
+
+.windowControlBtn:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 1024px) {
+  .windowControls {
+    top: 8px;
+    left: 8px;
+    gap: 4px;
+  }
+}

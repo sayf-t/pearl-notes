@@ -14,14 +14,18 @@
   height: 100%;
   color: inherit;
   box-sizing: border-box;
+  /* Ensure WindowControls can be positioned absolutely within this container */
 }
 
 .shell {
   --shell-padding-inline: clamp(20px, 4vw, 32px);
   --shell-padding-block: clamp(18px, 5vw, 32px);
+  /* Add margin-top to create space for window controls (button height + gap + padding) */
+  --window-controls-height: 42px; /* 26px button + 8px padding + 8px margin */
   flex: 1;
   max-width: 1200px;
   padding: var(--shell-padding-block) var(--shell-padding-inline) clamp(22px, 5vw, 36px);
+  margin-top: var(--window-controls-height);
   border-radius: 26px;
   background: var(--bg-panel);
   box-shadow: var(--shadow-strong);
@@ -316,6 +320,8 @@
     border-radius: 22px;
     backdrop-filter: blur(14px);
     min-height: 100%;
+    /* Smaller margin for window controls on mobile */
+    margin-top: 42px; /* 26px button + 8px padding + 8px margin */
   }
 
   .layout {

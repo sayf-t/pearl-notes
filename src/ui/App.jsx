@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Sidebar from './components/Sidebar'
 import StatusBar from './components/StatusBar'
 import WikiLinkPaletteDropdown from './components/WikiLinkPaletteDropdown'
+import WindowControls from './components/WindowControls'
 import { EDITOR_TOOLBAR_ACTIONS } from './constants.js'
 import { useNotesWorkspace } from './hooks/useNotesWorkspace'
 import { useMediaQuery } from './hooks/useMediaQuery'
@@ -210,6 +211,7 @@ export default function App ({ pearl, themeManager, markdown, uiLog }) {
 
   return (
     <div className={styles.app}>
+      <WindowControls />
       <div className={styles.shell}>
         <main className={styles.layout} role="main" aria-label="Pearl workspace">
           {!modalViewport ? (
