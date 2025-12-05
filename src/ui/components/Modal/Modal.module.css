@@ -1,0 +1,65 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+}
+
+.modal {
+  width: min(520px, 100%);
+  background: var(--bg-panel, #111);
+  border-radius: 18px;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  box-shadow: var(--shadow-soft, 0 18px 45px rgba(0, 0, 0, 0.35));
+  padding: 20px;
+  color: var(--text, #fff);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-strong, #fff);
+}
+
+.closeBtn {
+  border: none;
+  background: transparent;
+  color: var(--muted, #aaa);
+  font-size: 1.3rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.closeBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text, #fff);
+}
+
+.closeBtn:focus-visible {
+  outline: 2px solid var(--accent, #39ff87);
+  outline-offset: 2px;
+}
+
+.body {
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+

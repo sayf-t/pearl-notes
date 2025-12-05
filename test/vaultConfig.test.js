@@ -6,7 +6,8 @@ import {
   parseLinkString,
   applyLinkString,
   __setEnsureDriveForTests,
-  __flushDriveSetupQueueForTests
+  __setDriveSwitchersForTests,
+  __resetVaultKeyCacheForTests
 } from '../src/pear-end/vault/vaultConfig.js'
 
 async function withFakeLocalStorage (fn) {
@@ -17,6 +18,7 @@ async function withFakeLocalStorage (fn) {
     setItem: (k, v) => store.set(k, String(v)),
     removeItem: (k) => store.delete(k)
   }
+  __resetVaultKeyCacheForTests()
   try {
     return await fn(store)
   } finally {
@@ -61,26 +63,31 @@ test('vaultConfig: parseLinkString handles valid and invalid inputs', (t) => {
   t.ok(shortKeyResult.error.includes('64'), 'error message mentions expected length')
 })
 
-test('vaultConfig: applyLinkString validates and calls ensureDrive', async (t) => {
+test('vaultConfig: applyLinkString validates and calls drive switch helpers', async (t) => {
   const key = 'c'.repeat(64)
   const link = `pearl-vault://${key}`
-  const calls = []
+  const switchCalls = []
+  const replicateCalls = []
 
-  __setEnsureDriveForTests(async (opts) => {
-    calls.push(opts)
-    return { keyHex: opts.keyHex }
+  __setDriveSwitchersForTests({
+    forceSwitch: async (driveKey) => {
+      switchCalls.push(driveKey)
+    },
+    replicate: async (driveKey) => {
+      replicateCalls.push(driveKey)
+      return null
+    }
   })
 
   try {
     await withFakeLocalStorage(async (store) => {
       const result = await applyLinkString(link)
-      t.alike(result, { driveKey: key })
+      t.alike(result, { driveKey: key, previousDriveKey: null })
 
-      await __flushDriveSetupQueueForTests()
-
-      t.is(calls.length, 2)
-      t.alike(calls[0], { keyHex: key, replicate: false, force: true })
-      t.alike(calls[1], { keyHex: key, replicate: true })
+      t.is(switchCalls.length, 1)
+      t.is(switchCalls[0], key)
+      t.is(replicateCalls.length, 1)
+      t.is(replicateCalls[0], key)
 
       t.is(store.get('pearl-drive-key'), key)
     })
@@ -91,7 +98,7 @@ test('vaultConfig: applyLinkString validates and calls ensureDrive', async (t) =
       'invalid link should throw with descriptive error'
     )
   } finally {
-    __setEnsureDriveForTests(null)
+    __setDriveSwitchersForTests()
   }
 })
 

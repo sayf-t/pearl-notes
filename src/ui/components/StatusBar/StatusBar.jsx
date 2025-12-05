@@ -13,6 +13,7 @@ export default function StatusBar ({
   fontStyle = 'system',
   onFontChange,
   exportDir,
+  vaultKey,
   onVaultManagerOpen,
   onSidebarToggle,
   isSidebarOpen,
@@ -34,6 +35,16 @@ export default function StatusBar ({
   const handleStatusBarToggle = () => {
     onStatusBarToggle?.()
   }
+
+  const vaultKeyPreview = vaultKey ? `${vaultKey.slice(0, 6)}…` : null
+  const vaultChipTitleParts = []
+  if (vaultKey) vaultChipTitleParts.push(`Drive key: ${vaultKey}`)
+  if (exportDir) vaultChipTitleParts.push(`Export: ${exportDir}`)
+  const vaultChipTitle = vaultChipTitleParts.join(' • ') || 'Open vault manager'
+  const vaultChipAria = vaultKey
+    ? `Open vault manager. Current vault key ${vaultKeyPreview}`
+    : 'Open vault manager'
+  const showVaultChip = Boolean(onVaultManagerOpen)
 
   if (isCollapsed) {
     return (
@@ -66,18 +77,20 @@ export default function StatusBar ({
         <span className={`${styles.statusMessage} ${statusToneClass}`} aria-live="polite">
           {status.text}
         </span>
-        {exportDir ? (
+        {showVaultChip ? (
           <button
             type="button"
             className={styles.vaultChip}
             onClick={onVaultManagerOpen}
             disabled={!onVaultManagerOpen}
-            aria-label={`Open vault manager. Local export: ${exportDir}`}
-            title={`Local markdown export folder: ${exportDir}`}
+            aria-label={vaultChipAria}
+            title={vaultChipTitle}
           >
-            <span className={styles.vaultChipLabel}>Vault · Local export</span>
-            <span className={styles.vaultChipPath} aria-hidden="true">
-              {exportDir}
+            <span className={styles.vaultChipIcon} aria-hidden="true">
+              🔐
+            </span>
+            <span className={styles.vaultChipLabel}>
+              {vaultKeyPreview || 'Vault'}
             </span>
           </button>
         ) : null}

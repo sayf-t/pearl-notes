@@ -39,19 +39,22 @@
 
 .vaultChip {
   margin: 4px 0;
-  padding: 6px 12px;
+  padding: 4px 10px;
   display: inline-flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
+  align-items: center;
+  gap: 6px;
+  max-width: 120px;
   border-radius: 999px;
   border: 1px solid var(--border-subtle);
   background: var(--button-secondary-bg);
   color: var(--text);
   font-size: 0.7rem;
-  line-height: 1.2;
+  line-height: 1;
   cursor: pointer;
   transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .vaultChip:hover:not(:disabled),
@@ -67,19 +70,18 @@
 
 .vaultChipLabel {
   font-weight: 600;
-  font-size: 0.7rem;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.vaultChipPath {
-  max-width: 360px;
-  font-size: 0.75rem;
+  font-size: 0.68rem;
   color: var(--text);
+  letter-spacing: 0.01em;
+  text-transform: none;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.vaultChipIcon {
+  font-size: 0.8rem;
+  line-height: 1;
 }
 
 .sidebarToggleBtn {

@@ -1,7 +1,7 @@
 import {
   ensureDrive,
-  forceSwitchDrive,
-  replicateDrive,
+  forceSwitchDrive as forceSwitchDriveInternal,
+  replicateDrive as replicateDriveInternal,
   __setEnsureDriveForTests as __setEnsureDriveForTestsInternal,
   __flushDriveQueuesForTests as __flushDriveQueuesForTestsInternal
 } from './driveManager.js'
@@ -10,9 +10,26 @@ const STORAGE_KEY = 'pearl-drive-key'
 const RECENT_VAULTS_KEY = 'pearl-recent-vaults'
 const RECENT_VAULT_LIMIT = 8
 const DRIVE_KEY_PATTERN = /^[0-9a-fA-F]{64}$/
+const ENSURE_TIMEOUT_MS = 12000
+
+let cachedDriveKey = null
+let cachedKeyPrimed = false
 
 export const __setEnsureDriveForTests = __setEnsureDriveForTestsInternal
 export const __flushDriveSetupQueueForTests = __flushDriveQueuesForTestsInternal
+
+let forceSwitchDriveImpl = forceSwitchDriveInternal
+let replicateDriveImpl = replicateDriveInternal
+
+export function __setDriveSwitchersForTests ({ forceSwitch, replicate } = {}) {
+  forceSwitchDriveImpl = typeof forceSwitch === 'function' ? forceSwitch : forceSwitchDriveInternal
+  replicateDriveImpl = typeof replicate === 'function' ? replicate : replicateDriveInternal
+}
+
+export function __resetVaultKeyCacheForTests () {
+  cachedDriveKey = null
+  cachedKeyPrimed = false
+}
 
 function normalizeLink (linkString) {
   return linkString?.trim?.() ?? ''
@@ -20,6 +37,25 @@ function normalizeLink (linkString) {
 
 // Backwards-compatible reader: accepts either a plain hex key or the
 // JSON shape we briefly used during the multi-writer experiment.
+function normalizeKey (keyHex) {
+  return typeof keyHex === 'string' ? keyHex.toLowerCase() : null
+}
+
+function primeCachedDriveKey () {
+  if (!cachedKeyPrimed) {
+    cachedDriveKey = readStoredDriveKey()
+    cachedKeyPrimed = true
+  }
+  return cachedDriveKey
+}
+
+function setCachedDriveKey (keyHex) {
+  const normalized = normalizeKey(keyHex)
+  if (!normalized) return
+  cachedDriveKey = normalized
+  cachedKeyPrimed = true
+}
+
 function readStoredDriveKey () {
   try {
     const raw = globalThis?.localStorage?.getItem(STORAGE_KEY)
@@ -41,9 +77,11 @@ function readStoredDriveKey () {
 
 function persistDriveKey (keyHex) {
   if (!keyHex) return
+  const normalized = keyHex.toLowerCase()
   try {
-    globalThis?.localStorage?.setItem(STORAGE_KEY, keyHex.toLowerCase())
+    globalThis?.localStorage?.setItem(STORAGE_KEY, normalized)
   } catch {}
+  setCachedDriveKey(normalized)
 }
 
 function readRecentVaults () {
@@ -70,7 +108,11 @@ function persistRecentVaults (vaults) {
 }
 
 export function getPersistedVaultKey () {
-  return readStoredDriveKey()
+  return primeCachedDriveKey()
+}
+
+export function getCurrentVaultKeySync () {
+  return primeCachedDriveKey()
 }
 
 export function getRecentVaults () {
@@ -88,10 +130,51 @@ export function addRecentVault ({ driveKey, label } = {}) {
   return nextList.slice(0, RECENT_VAULT_LIMIT)
 }
 
+function withTimeout (promise, timeoutMs, label = 'Operation') {
+  if (!timeoutMs) return promise
+  let timer
+  const timeoutPromise = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      const timeoutError = new Error(`${label} timed out after ${timeoutMs}ms`)
+      timeoutError.name = 'VaultEnsureTimeout'
+      reject(timeoutError)
+    }, timeoutMs)
+  })
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    if (timer) clearTimeout(timer)
+  })
+}
+
 export async function ensureVaultConfig () {
-  const storedKey = readStoredDriveKey()
-  const { keyHex } = await ensureDrive({ keyHex: storedKey || undefined })
-  if (keyHex && keyHex !== storedKey) persistDriveKey(keyHex)
+  const storedKey = primeCachedDriveKey()
+  let ensureResult = null
+  let ensureError = null
+  try {
+    ensureResult = await withTimeout(
+      ensureDrive({ keyHex: storedKey || undefined }),
+      ENSURE_TIMEOUT_MS,
+      'Vault initialization'
+    )
+  } catch (err) {
+    ensureError = err
+    if (err?.name === 'VaultEnsureTimeout') {
+      console.warn('[Vault] ensureDrive timed out; continuing with cached key')
+    } else {
+      throw err
+    }
+  }
+
+  const keyHex = ensureResult?.keyHex || storedKey || null
+
+  if (!keyHex) {
+    if (ensureError) throw ensureError
+    throw new Error('Unable to determine vault drive key')
+  }
+
+  if (keyHex !== storedKey) {
+    persistDriveKey(keyHex)
+  }
+
   return { driveKey: keyHex }
 }
 
@@ -143,10 +226,19 @@ export async function applyLinkString (linkString) {
     throw new Error('Invalid vault link: unable to parse drive key')
   }
 
+  const previousKey = primeCachedDriveKey()
   persistDriveKey(result.driveKey)
 
-  await forceSwitchDrive(result.driveKey)
-  replicateDrive(result.driveKey)
+  try {
+    await forceSwitchDriveImpl(result.driveKey)
+    replicateDriveImpl(result.driveKey)
+  } catch (err) {
+    if (previousKey) {
+      console.warn('[Vault] Drive switch failed — restoring previous key')
+      persistDriveKey(previousKey)
+    }
+    throw err
+  }
 
-  return { driveKey: result.driveKey }
+  return { driveKey: result.driveKey, previousDriveKey: previousKey }
 }

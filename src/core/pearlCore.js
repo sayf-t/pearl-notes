@@ -6,7 +6,7 @@ import {
   ensureVaultConfig,
   createLinkString,
   applyLinkString,
-  getPersistedVaultKey,
+  getCurrentVaultKeySync,
   getRecentVaults as readRecentVaults,
   addRecentVault
 } from '../pear-end/vault/vaultConfig.js'
@@ -133,7 +133,7 @@ export async function getCurrentVaultKey () {
   const liveKey = getCurrentDriveKey()
   if (liveKey) return liveKey
 
-  const storedKey = getPersistedVaultKey()
+  const storedKey = getCurrentVaultKeySync()
   if (storedKey) return storedKey
 
   const cfg = await ensureVaultConfig()

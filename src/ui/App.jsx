@@ -330,6 +330,7 @@ export default function App ({ pearl, themeManager, markdown, uiLog }) {
           fontStyle={themeState.fontStyle}
           onFontChange={handleFontChange}
           exportDir={exportDir}
+          vaultKey={vaultStatus?.driveKey}
           onVaultManagerOpen={handleVaultManagerOpen}
           onSidebarToggle={handleSidebarToggleRequest}
           isSidebarOpen={statusBarSidebarOpen}
