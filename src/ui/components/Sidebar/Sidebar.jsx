@@ -6,6 +6,7 @@ import {
   FilePlus2,
   LayoutPanelTop,
   Palette,
+  Search,
   Share2,
   SquarePen,
   Type,
@@ -39,7 +40,8 @@ export default function Sidebar ({
   fontStyle = 'system',
   onFontChange,
   variant = 'inline',
-  showCollapseToggle = true
+  showCollapseToggle = true,
+  onSearchOpen
 }) {
   const isModal = variant === 'modal'
   const canCollapse = showCollapseToggle && !isModal && typeof onToggleSidebar === 'function'
@@ -63,6 +65,7 @@ export default function Sidebar ({
   const canCopyKey = typeof onCopyVaultKey === 'function'
   const canToggleStatusBar = typeof onStatusBarToggle === 'function'
   const canChangeFont = typeof onFontChange === 'function'
+  const canOpenSearch = typeof onSearchOpen === 'function'
   const PreviewIcon = previewMode === 'preview' ? SquarePen : Eye
   const previewToggleLabel = previewButtonLabel || 'Toggle preview'
   const statusBarToggleLabel = isStatusBarVisible ? 'Hide status bar' : 'Show status bar'
@@ -79,6 +82,17 @@ export default function Sidebar ({
             onClick={onToggleSidebar}
           >
             <ToggleIcon size={18} aria-hidden="true" />
+          </button>
+        ) : null}
+        {canOpenSearch ? (
+          <button
+            className="icon-btn"
+            type="button"
+            aria-label="Search notes (⌘O)"
+            title="Search notes (⌘O)"
+            onClick={onSearchOpen}
+          >
+            <Search size={18} aria-hidden="true" />
           </button>
         ) : null}
         {canTogglePreview ? (

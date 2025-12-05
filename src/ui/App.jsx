@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Sidebar from './components/Sidebar'
+import SearchPalette from './components/SearchPalette/SearchPalette.jsx'
 import StatusBar from './components/StatusBar'
 import WikiLinkPaletteDropdown from './components/WikiLinkPaletteDropdown'
 import WindowControls from './components/WindowControls'
@@ -8,6 +9,7 @@ import { useNotesWorkspace } from './hooks/useNotesWorkspace'
 import { useMediaQuery } from './hooks/useMediaQuery'
 import { useThemeState } from './hooks/useThemeState'
 import { useVaultStatus } from './hooks/useVaultStatus'
+import { semanticSearch } from './utils/semanticSearch.js'
 import { openThemePicker } from './utils/themePicker.js'
 import { openVaultManagerModal } from './utils/vault.js'
 import { openNotesModal } from './utils/openNotesModal.js'
@@ -54,8 +56,12 @@ export default function App ({ pearl, themeManager, markdown, uiLog }) {
   const isNarrowViewport = useMediaQuery(MOBILE_QUERY)
   const [isSidebarModalOpen, setSidebarModalOpen] = useState(false)
   const [isStatusBarVisible, setStatusBarVisible] = useState(true)
+  const [isSearchOpen, setSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchHighlightIndex, setSearchHighlightIndex] = useState(0)
   const titleInputRef = useRef(null)
   const sidebarModalControllerRef = useRef(null)
+  const lastFocusedRef = useRef(null)
 
   const handleFontChange = useCallback(
     (event) => {
@@ -86,6 +92,57 @@ export default function App ({ pearl, themeManager, markdown, uiLog }) {
       requestAnimationFrame(adjustTitleHeight)
     }
   }, [handleFieldInput, adjustTitleHeight])
+
+  const handleOpenSearch = useCallback(() => {
+    lastFocusedRef.current = document.activeElement
+    setSearchOpen(true)
+    setSearchQuery('')
+    setSearchHighlightIndex(0)
+  }, [])
+
+  const handleCloseSearch = useCallback(() => {
+    setSearchOpen(false)
+    setSearchQuery('')
+    setSearchHighlightIndex(0)
+    const el = lastFocusedRef.current
+    if (el && typeof el.focus === 'function') {
+      el.focus({ preventScroll: true })
+    }
+  }, [])
+
+  const handleSelectSearchResult = useCallback(
+    (result) => {
+      if (!result) return
+      setSearchOpen(false)
+      setSearchQuery('')
+      setSearchHighlightIndex(0)
+      openNote(result.id)
+      const el = lastFocusedRef.current
+      if (el && typeof el.focus === 'function') {
+        el.focus({ preventScroll: true })
+      }
+    },
+    [openNote]
+  )
+
+  useEffect(() => {
+    const handleGlobalShortcut = (event) => {
+      const isO = event.key?.toLowerCase() === 'o'
+      const isSearchCombo = isO && (event.metaKey || event.ctrlKey)
+      if (!isSearchCombo) return
+      if (event.altKey || event.shiftKey) return
+      // Allow opening even when in inputs to mirror command palette UX
+      event.preventDefault()
+      handleOpenSearch()
+    }
+    window.addEventListener('keydown', handleGlobalShortcut)
+    return () => window.removeEventListener('keydown', handleGlobalShortcut)
+  }, [handleOpenSearch])
+
+  const searchResults = useMemo(
+    () => semanticSearch(notes, searchQuery, { limit: 30 }),
+    [notes, searchQuery]
+  )
 
   useEffect(() => {
     adjustTitleHeight()
@@ -131,7 +188,8 @@ export default function App ({ pearl, themeManager, markdown, uiLog }) {
         onStatusBarToggle: handleStatusBarToggle,
         isStatusBarVisible,
         fontStyle: themeState.fontStyle,
-        onFontChange: handleFontChange
+        onFontChange: handleFontChange,
+        onSearchOpen: handleOpenSearch
       }),
     [
       notes,
@@ -148,7 +206,8 @@ export default function App ({ pearl, themeManager, markdown, uiLog }) {
       handleCopyVaultKey,
       handleStatusBarToggle,
       isStatusBarVisible,
-      handleFontChange
+      handleFontChange,
+      handleOpenSearch
     ]
   )
 
@@ -349,6 +408,16 @@ export default function App ({ pearl, themeManager, markdown, uiLog }) {
           onSelect={handleWikiOptionSelect}
         />
       ) : null}
+      <SearchPalette
+        isOpen={isSearchOpen}
+        query={searchQuery}
+        results={searchResults}
+        highlightedIndex={searchHighlightIndex}
+        onClose={handleCloseSearch}
+        onQueryChange={setSearchQuery}
+        onSelectResult={handleSelectSearchResult}
+        onHighlightChange={setSearchHighlightIndex}
+      />
     </div>
   )
 }
